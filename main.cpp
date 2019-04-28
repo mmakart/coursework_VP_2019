@@ -14,6 +14,7 @@
 */
 
 #include <iostream>
+#include <string>
 
 using namespace std;
 
@@ -27,14 +28,55 @@ struct Regions
     string regionalCenter; //региональный центр
 };
 
+void printPrompt();
+void printCommands();
+
 int main()
 {
+    string mode; //Команда пользователя
+
     cout << "+------------------------------------------------+" << endl;
     cout << "| Программа, позволяющая работать с базой данных |" << endl;
     cout << "| субъектов Российской Федерации                 |" << endl;
     cout << "+------------------------------------------------+" << endl;
+    cout << endl;
 
-    
+    printCommands();
+    cout << endl;
+
+    cout << "Введите команду. (Список команд можно посмотреть, введя \"h\")" << endl;
+
+    while (true) 
+    {
+        printPrompt();
+        getline(cin, mode);
+
+        if (mode == "q")
+            break;
+
+    }
+
+    cout << "Завершение..." << endl;
 
     return 0;
+}
+
+//Приглашение ввести команду
+void printPrompt()
+{
+    cout << "> ";
+}
+
+//Помощь. Список доступных команд
+void printCommands()
+{
+    cout << "+------------------------------------------+" << endl;
+    cout << "| 1 - ввод нового элемента в массив        |" << endl;
+    cout << "| 2 - печать всего массива                 |" << endl;
+    cout << "| 3 - поиск элемента в массиве             |" << endl;
+    cout << "| 4 - сортировка массива по заданному полю |" << endl;
+    cout << "| 5 - сохранение массива в файле           |" << endl;
+    cout << "| 6 - чтение массива из файла              |" << endl;
+    cout << "| q - выход из программы                   |" << endl;
+    cout << "+------------------------------------------+" << endl;
 }
