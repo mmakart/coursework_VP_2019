@@ -18,13 +18,15 @@
 #include <iomanip>
 #include <fstream>
 
+#define DEBUG
+
 using namespace std;
 
 //Регионы РФ
 struct Regions
 {
     int code; //код региона
-    string governor; //ФИО губернатора
+    string governor[3]; //ФИО губернатора
     double area; //площадь
     int population; //население
     string regionalCenter; //региональный центр
@@ -138,7 +140,9 @@ void printDB(Regions *reg, int size)
     for (int i = 0; i < size; i++)
     {
         cout << reg[i].code << '\t';
-        cout << reg[i].governor << '\t';
+        cout << reg[i].governor[0] << " ";
+        cout << reg[i].governor[1] << " ";
+        cout << reg[i].governor[2] << '\t';
         cout << reg[i].area << '\t';
         cout << reg[i].population << '\t';
         cout << reg[i].regionalCenter << endl;
@@ -167,12 +171,102 @@ void loadFromFile(Regions *reg, int &size, bool &isLoaded)
     //Считай количество строк, т. е. записей
     //Создай динамический массив на кол-во записей
     //Скопируй всё содержимое строк
-    ifstream fin;
+
+    static ifstream fin;
     string path;
+
+    string currentLine; //Текущая строка из файла
+    int lines = 0; //Счётчик строк в файле
+
+    char exitLoad;
+
+    if (fin.is_open())
+    {
+        cout << "Предупреждение. Есть открытый файл." << endl;
+        cout << "Выйти из режима загрузки файла? (y/n) ";
+        cin >> exitLoad;
+        if (exitLoad != 'n')
+        {
+            //Уходим отсюда
+            return;
+        }
+        fin.close();
+    }
+
+    isLoaded = false;
+
+    //delete [] reg;
+    //reg = nullptr;
 
     cout << "Введите путь к файлу: " << endl;
     cin.ignore();
     getline(cin, path);
 
-    isLoaded = true;
+    fin.open(path);
+
+    if(fin.is_open())
+    {
+        //Считать количество строк
+        while (getline(fin, currentLine))
+        {
+            lines++;
+        }
+        lines /= 7;
+#ifdef DEBUG
+        cout << "lines=" << lines << endl;
+#endif
+
+        //Выделить память под массив
+        reg = new Regions[lines];
+
+        //Парсить его из файла
+        for (int i = 0; i < lines; i++)
+        {
+            /*fin >> reg[i].code;
+            fin.ignore();
+
+            //fin >> reg[i].governor[0];
+            //fin >> reg[i].governor[1];
+            //fin >> reg[i].governor[2];
+
+            getline(fin, reg[i].governor[0]);
+            getline(fin, reg[i].governor[1]);
+            getline(fin, reg[i].governor[2]);
+
+            fin >> reg[i].area;
+            fin >> reg[i].population;
+            fin >> reg[i].regionalCenter;*/
+            fin >> reg[i].code;
+            fin.ignore();
+            getline(fin, reg[i].governor[0]);
+            getline(fin, reg[i].governor[1]);
+            getline(fin, reg[i].governor[2]);
+            fin >> reg[i].area;
+            fin >> reg[i].population;
+            fin >> reg[i].regionalCenter;
+        }
+#ifdef DEBUG
+        cout << "reg[0].code=" << reg[0].code << endl;
+        cout << "reg[0].governer[0]=" << reg[0].governor[0] << endl;
+        cout << "reg[0].governer[1]=" << reg[0].governor[1] << endl;
+        cout << "reg[0].governer[2]=" << reg[0].governor[2] << endl;
+        cout << "reg[0].area=" << reg[0].area << endl;
+        cout << "reg[0].population=" << reg[0].population << endl;
+        cout << "reg[0].regionalCenter=" << reg[0].regionalCenter << endl;
+
+        cout << "reg[1].code=" << reg[1].code << endl;
+        cout << "reg[1].governer[0]=" << reg[1].governor[0] << endl;
+        cout << "reg[1].governer[1]=" << reg[1].governor[1] << endl;
+        cout << "reg[1].governer[2]=" << reg[1].governor[2] << endl;
+        cout << "reg[1].area=" << reg[1].area << endl;
+        cout << "reg[1].population=" << reg[1].population << endl;
+        cout << "reg[1].regionalCenter=" << reg[1].regionalCenter << endl;
+#endif
+
+        isLoaded = true;
+    }
+    else
+    {
+        cout << "Такого файла нет" << endl;
+    }
 }
