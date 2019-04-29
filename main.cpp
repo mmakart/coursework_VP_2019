@@ -195,8 +195,8 @@ void loadFromFile(Regions *reg, int &size, bool &isLoaded)
 
     isLoaded = false;
 
-    //delete [] reg;
-    //reg = nullptr;
+    delete [] reg;
+    reg = nullptr;
 
     cout << "Введите путь к файлу: " << endl;
     cin.ignore();
@@ -216,27 +216,17 @@ void loadFromFile(Regions *reg, int &size, bool &isLoaded)
         cout << "lines=" << lines << endl;
 #endif
 
+        fin.close();
+        fin.open(path);
+
         //Выделить память под массив
         reg = new Regions[lines];
 
         //Парсить его из файла
         for (int i = 0; i < lines; i++)
         {
-            /*fin >> reg[i].code;
-            fin.ignore();
-
-            //fin >> reg[i].governor[0];
-            //fin >> reg[i].governor[1];
-            //fin >> reg[i].governor[2];
-
-            getline(fin, reg[i].governor[0]);
-            getline(fin, reg[i].governor[1]);
-            getline(fin, reg[i].governor[2]);
-
-            fin >> reg[i].area;
-            fin >> reg[i].population;
-            fin >> reg[i].regionalCenter;*/
             fin >> reg[i].code;
+            cout << "reg[i].code=" << reg[i].code << endl;
             fin.ignore();
             getline(fin, reg[i].governor[0]);
             getline(fin, reg[i].governor[1]);
