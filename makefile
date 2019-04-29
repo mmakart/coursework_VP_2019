@@ -1,2 +1,2 @@
 all:
-	g++ -o Makartsev_BD main.cpp
+	g++ -o Makartsev_BD main.cpp -std=c++11
