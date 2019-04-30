@@ -26,7 +26,7 @@ using namespace std;
 struct Regions
 {
     int code; //код региона
-    char governor[3][32]; //ФИО губернатора
+    string governor; //ФИО губернатора
     float area; //площадь
     int population; //население
     char regionalCenter[32]; //региональный центр
@@ -131,42 +131,36 @@ void printCommands()
 void printDB(Regions *reg, int size)
 {
     const int colNumber = 5;
-    int colWidth[colNumber] = {14, 31, 11, 11, 16}; //Ширина каждого столбца
-    /*int colData[colNumber] = {}; //Длина содержимого 
-    int colSpaces[colNumber] = {}; //Сколько пробелов поставить до/после данных*/
-    char *tableHeaders[colNumber] =
-    { "Regional code", "Governer", "Area, km^2", "Population", "Regional center" };
-    /*for (int i = 0; i < colNumber; i++) {
-        colData[i] = strlen(tableHeaders[i]);
-    }*/
-    /*for (int i = 0; i < colNumber; i++) {
-        colSpaces[i] = colWidth[i] - colData[i];
-    }*/
-    /*for (int i = 0; i < colNumber; i++) {
-        cout << tableHeaders[i] << string(colSpaces[i], '#');
-    }*/
+    int colWidth[colNumber] = {16, 31, 13, 13, 22}; //Ширина каждого столбца
+    string tableHeaders[colNumber] =
+    {
+        "Regional code", "Governer", "Area, km^2", "Population", "Regional center"
+    };
+
+    //Вывод заголовков
+    int tableWidth = 0;
+    for (int i = 0; i < colNumber; i++) {
+        tableWidth += colWidth[i];
+    }
+    cout << string(tableWidth, '=') << endl;
     for (int i = 0; i < colNumber; i++)
     {
         cout << left << setw(colWidth[i]) << tableHeaders[i];
     }
     cout << endl;
-    /*cout << setw(12) << tableHeaders[0];
-    cout << setw(31) << tableHeaders[1];
-    cout << setw(19) << tableHeaders[2];
-    cout << setw(21) << tableHeaders[3];
-    cout << setw(16) << tableHeaders[4];*/
+    cout << string(tableWidth, '-') << endl;
 
+    //Вывод содержимого таблицы
     for (int i = 0; i < size; i++)
     {
-        
         cout << setw(colWidth[0]) << reg[i].code;
-        cout << setw(colWidth[1]) << reg[i].governor[0] 
-        cout << setw(colWidth[1]) << " " << setw(colWidth[1]) << reg[i].governor[1]
-        cout << setw(colWidth[1]) << " " << setw(colWidth[1]) << reg[i].governor[2];
-        cout << setw(colWidth[2]) << reg[i].area;
-        cout << setw(colWidth[3]) << reg[i].population;
-        cout << setw(colWidth[4]) << reg[i].regionalCenter << endl;
+        cout << setw(colWidth[1]) << reg[i].governor;
+        cout << right << setw(colWidth[2] - 3) << reg[i].area << "   ";
+        cout << right << setw(colWidth[3] - 3) << reg[i].population << "   ";
+        cout << left << setw(colWidth[4]) << reg[i].regionalCenter;
+        cout << endl;
     }
+    cout << string(tableWidth, '-') << endl;
 }
 
 void addElement(Regions *&reg, int &size, bool isLoaded)
@@ -177,7 +171,7 @@ void addElement(Regions *&reg, int &size, bool isLoaded)
     }
     else
     {
-        cout << "Сначала откройте какой-то файл командой \"6\"" << endl;
+        cout << "Сначала загрузите какой-то файл командой \"6\"" << endl;
     }
 }
 
@@ -200,12 +194,13 @@ void loadFromFile(Regions *&reg, int &size, bool &isLoaded)
 
     char exitLoad;
 
+    //Если массив хранит несохранённые данные
     if (fin.is_open())
     {
-        cout << "Предупреждение. Есть открытый файл." << endl;
-        cout << "Выйти из режима загрузки файла? (y/n) ";
+        cout << "Предупреждение. Есть несохранённые данные." << endl;
+        cout << "Продолжить? (y/n) ";
         cin >> exitLoad;
-        if (exitLoad != 'n')
+        if (exitLoad != 'y')
         {
             //Уходим отсюда
             return;
@@ -224,62 +219,48 @@ void loadFromFile(Regions *&reg, int &size, bool &isLoaded)
 
     fin.open(path);
 
+    //Если такой файл существует на диске
     if(fin.is_open())
     {
         //Считать количество строк
-        while (getline(fin, currentLine))
-        {
+        while (getline(fin, currentLine)) {
             lines++;
         }
-        lines /= 7;
 #ifdef DEBUG
         cout << "lines=" << lines << endl;
 #endif
         size = lines;
 
         fin.close();
-        fin.open(path);
+        fin.open(path); //Чтобы считывать файл с начала
 
         //Выделить память под массив
-        reg = new Regions[lines];
+        reg = new Regions[size];
+
+        string tempGovernor; //Для временного хранения Ф, И, О
 
         //Парсить его из файла
         for (int i = 0; i < lines; i++)
         {
             fin >> reg[i].code;
-            //fin.ignore();
-            //getline(fin, reg[i].governor[0], 32);
-            //getline(fin, reg[i].governor[1], 32);
-            //getline(fin, reg[i].governor[2], 32);
-            fin >> reg[i].governor[0];
-            fin >> reg[i].governor[1];
-            fin >> reg[i].governor[2];
+            fin >> tempGovernor;
+            reg[i].governor += tempGovernor + ' ';
+            fin >> tempGovernor;
+            reg[i].governor += tempGovernor + ' ';
+            fin >> tempGovernor;
+            reg[i].governor += tempGovernor;
             fin >> reg[i].area;
             fin >> reg[i].population;
             fin >> reg[i].regionalCenter;
         }
-#ifdef DEBUG
-        cout << "reg[0].code=" << reg[0].code << endl;
-        cout << "reg[0].governer[0]=" << reg[0].governor[0] << endl;
-        cout << "reg[0].governer[1]=" << reg[0].governor[1] << endl;
-        cout << "reg[0].governer[2]=" << reg[0].governor[2] << endl;
-        cout << "reg[0].area=" << reg[0].area << endl;
-        cout << "reg[0].population=" << reg[0].population << endl;
-        cout << "reg[0].regionalCenter=" << reg[0].regionalCenter << endl;
-
-        cout << "reg[1].code=" << reg[1].code << endl;
-        cout << "reg[1].governer[0]=" << reg[1].governor[0] << endl;
-        cout << "reg[1].governer[1]=" << reg[1].governor[1] << endl;
-        cout << "reg[1].governer[2]=" << reg[1].governor[2] << endl;
-        cout << "reg[1].area=" << reg[1].area << endl;
-        cout << "reg[1].population=" << reg[1].population << endl;
-        cout << "reg[1].regionalCenter=" << reg[1].regionalCenter << endl;
-#endif
 
         isLoaded = true;
+
+        //Не знаю, закрывать ли файл после окончания чтения
+        fin.close();
     }
     else
     {
-        cout << "Такого файла нет" << endl;
+        cout << "Такого файла нет." << endl;
     }
 }
