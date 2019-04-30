@@ -74,27 +74,27 @@ int main()
         switch (command)
         {
             //Добавление элемента
-            case '1':
+            case 'a':
                 addElement(regions, size, changesAreSaved);
                 break;
             //Печать базы данных
-            case '2':
+            case 'l':
                 printContents(regions, size);
                 break;
             //Поиск элемента по заданному полю
-            case '3':
+            case 'f':
                 findContents(regions, size);
                 break;
             //Сортировка по заданному полю
-            case '4':
+            case 's':
                 sortContents(regions, size);
                 break;
             //Сохранение в файл
-            case '5':
+            case 'w':
                 saveToFile(regions, size, changesAreSaved);
                 break;
             //Чтение из файла
-            case '6':
+            case 'r':
                 loadFromFile(regions, size, changesAreSaved);
                 break;
             //Помощь
@@ -137,14 +137,21 @@ void printPrompt()
 void printCommands()
 {
     cout << "+------------------------------------------+" << endl;
-    cout << "| 1 - ввод нового элемента в массив        |" << endl;
-    cout << "| 2 - печать всего массива                 |" << endl;
-    cout << "| 3 - поиск элемента в массиве             |" << endl;
-    cout << "| 4 - сортировка массива по заданному полю |" << endl;
-    cout << "| 5 - сохранение массива в файле           |" << endl;
-    cout << "| 6 - чтение массива из файла              |" << endl;
+    cout << "| a - ввод нового элемента в массив        |" << endl;
+    cout << "| l - печать всего массива                 |" << endl;
+    cout << "| f - поиск элемента в массиве             |" << endl;
+    cout << "| s - сортировка массива по заданному полю |" << endl;
+    cout << "| w - сохранение массива в файле           |" << endl;
+    cout << "| r - чтение массива из файла              |" << endl;
+    cout << "+------------------------------------------+" << endl;
+    cout << "| h - список команд                        |" << endl;
     cout << "| q - выход из программы                   |" << endl;
     cout << "+------------------------------------------+" << endl;
+}
+
+void printNoData()
+{
+    cout << "Сначала откройте файл." << endl;
 }
 
 void printTable(Regions *reg, int size)
@@ -186,7 +193,7 @@ void addElement(Regions *&reg, int &size, bool &isSaved)
 {
     if (reg == nullptr)
     {
-        cout << "Сначала загрузите в память какой-то файл командой \"6\"" << endl;
+        printNoData();
         return;
     }
 
@@ -194,7 +201,7 @@ void addElement(Regions *&reg, int &size, bool &isSaved)
     Regions newReg;
 
     //Ввод нового элемента
-    cout << "Введите элемент: " << endl;
+    cout << "Введите элемент." << endl;
     cout << "Код региона: ";
     cin >> newReg.code;
     cout << "ФИО губернатора: ";
@@ -235,7 +242,7 @@ void printContents(Regions *reg, int size)
 {
     if (reg == nullptr)
     {
-        cout << "Сначала откройте файл." << endl;
+        printNoData();
         return;
     }
     printTable(reg, size);
@@ -390,7 +397,7 @@ void sortContents(Regions *reg, int size)
 {
     if (reg == nullptr)
     {
-        cout << "Вы ещё не открыли никакого файла." << endl;
+        printNoData();
         return;
     }
     int field;
@@ -499,7 +506,7 @@ void saveToFile(Regions *reg, int size, bool &isSaved)
 {
     if (reg == nullptr)
     {
-        cout << "Вы ещё ничего не открыли." << endl;
+        printNoData();
         return;
     }
     ofstream fout;
