@@ -28,7 +28,7 @@ struct Regions
     int code; //код региона
     char governor[3][32]; //ФИО губернатора
     float area; //площадь
-    float population; //население
+    int population; //население
     char regionalCenter[32]; //региональный центр
 };
 
@@ -131,34 +131,41 @@ void printCommands()
 void printDB(Regions *reg, int size)
 {
     const int colNumber = 5;
-    int colWidth[colNumber] = {12, 31, 19, 21, 16}; //Ширина каждого столбца
-    int colData[colNumber] = {}; //Длина содержимого 
-    int colSpaces[colNumber] = {}; //Сколько пробелов поставить до/после данных
+    int colWidth[colNumber] = {14, 31, 11, 11, 16}; //Ширина каждого столбца
+    /*int colData[colNumber] = {}; //Длина содержимого 
+    int colSpaces[colNumber] = {}; //Сколько пробелов поставить до/после данных*/
     char *tableHeaders[colNumber] =
-    { "Код региона", "ФИО губернатора", "Площадь, тыс. км^2", "Население, тыс. чел.", "Областной центр" };
-    for (int i = 0; i < colNumber; i++) {
+    { "Regional code", "Governer", "Area, km^2", "Population", "Regional center" };
+    /*for (int i = 0; i < colNumber; i++) {
         colData[i] = strlen(tableHeaders[i]);
-    }
-    for (int i = 0; i < colNumber; i++) {
+    }*/
+    /*for (int i = 0; i < colNumber; i++) {
         colSpaces[i] = colWidth[i] - colData[i];
-    }
+    }*/
     /*for (int i = 0; i < colNumber; i++) {
         cout << tableHeaders[i] << string(colSpaces[i], '#');
     }*/
-    cout << setw(12) << tableHeaders[0];
+    for (int i = 0; i < colNumber; i++)
+    {
+        cout << left << setw(colWidth[i]) << tableHeaders[i];
+    }
+    cout << endl;
+    /*cout << setw(12) << tableHeaders[0];
     cout << setw(31) << tableHeaders[1];
     cout << setw(19) << tableHeaders[2];
     cout << setw(21) << tableHeaders[3];
-    cout << setw(16) << tableHeaders[4];
+    cout << setw(16) << tableHeaders[4];*/
 
     for (int i = 0; i < size; i++)
     {
         
-        cout << setw(12) << reg[i].code;
-        cout << setw(31) << reg[i].governor[0] << " " << reg[i].governor[1] << " " << reg[i].governor[2];
-        cout << setw(19) << reg[i].area;
-        cout << setw(21) << reg[i].population;
-        cout << setw(16) << reg[i].regionalCenter << endl;
+        cout << setw(colWidth[0]) << reg[i].code;
+        cout << setw(colWidth[1]) << reg[i].governor[0] 
+        cout << setw(colWidth[1]) << " " << setw(colWidth[1]) << reg[i].governor[1]
+        cout << setw(colWidth[1]) << " " << setw(colWidth[1]) << reg[i].governor[2];
+        cout << setw(colWidth[2]) << reg[i].area;
+        cout << setw(colWidth[3]) << reg[i].population;
+        cout << setw(colWidth[4]) << reg[i].regionalCenter << endl;
     }
 }
 
