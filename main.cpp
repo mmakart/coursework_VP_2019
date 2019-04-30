@@ -29,22 +29,25 @@ struct Regions
     string governor; //ФИО губернатора
     float area; //площадь
     int population; //население
-    char regionalCenter[32]; //региональный центр
+    string regionalCenter; //региональный центр
 };
 
 void printPrompt();
 void printCommands();
+void addElement(Regions *&reg, int &size, bool &isSaved);
 void printDB(Regions *reg, int size);
-void addElement(Regions *&reg, int &size, bool isLoaded);
-void loadFromFile(Regions *&reg, int &size, bool &isLoaded);
+void saveToFile(Regions *reg, int size, bool &isSaved);
+void loadFromFile(Regions *&reg, int &size, bool isSaved);
 
 int main()
 {
     char command; //Команда пользователя
-    bool fileIsLoaded = false; //Загружен ли файл
+    //bool fileIsLoaded = false; //Загружен ли файл в массив
 
     Regions *regions = nullptr; //База данных в оперативной памяти
     int size = 0; //Количество записей
+    bool changesAreSaved = true;
+    char confirmExit; //(y|n) Сохранить ли файл
 
     cout << "+------------------------------------------------+" << endl;
     cout << "| Программа, позволяющая работать с базой данных |" << endl;
@@ -63,14 +66,24 @@ int main()
         cin >> command;
 
         //Условие выхода из цикла
-        if (command == 'q')
-            break;
+        /*if (command == 'q')
+        {
+            if (!changesAreSaved)
+            {
+                cout << "Есть несохранённые изменения. Всё равно выйти? (y/n) " << endl;
+                cin >> confirmExit;
+                if (confirmExit == 'y')
+                {
+                    break;
+                }
+            }
+        }*/
 
         switch (command)
         {
             //Добавление элемента
             case '1':
-                addElement(regions, size, fileIsLoaded);
+                addElement(regions, size, changesAreSaved);
                 break;
             //Печать базы данных
             case '2':
@@ -86,22 +99,35 @@ int main()
                 break;
             //Сохранение в файл
             case '5':
-                cout << "Сохранить" << endl;
+                saveToFile(regions, size, changesAreSaved);
                 break;
             //Чтение из файла
             case '6':
-                loadFromFile(regions, size, fileIsLoaded);
+                loadFromFile(regions, size, changesAreSaved);
                 break;
             //Помощь
             case 'h':
                 printCommands();
                 break;
+            //Выход
+            case 'q':
+                if (changesAreSaved)
+                    goto EXIT;
+
+                cout << "Есть несохранённые изменения. Всё равно выйти? (y/n) ";
+                cin >> confirmExit;
+                if (confirmExit == 'y')
+                    goto EXIT;
+                else
+                    break;
             //Неизвестная команда
             default:
                 cout << "Такой команды нет. Для просмотра доступных команд введите \"h\"" << endl;
         }
 
     }
+
+EXIT:
 
     cout << "Завершение..." << endl;
 
@@ -130,11 +156,16 @@ void printCommands()
 
 void printDB(Regions *reg, int size)
 {
+    if (reg == nullptr)
+    {
+        cout << "Сначала откройте файл." << endl;
+        return;
+    }
     const int colNumber = 5;
     int colWidth[colNumber] = {16, 31, 13, 13, 22}; //Ширина каждого столбца
     string tableHeaders[colNumber] =
     {
-        "Regional code", "Governer", "Area, km^2", "Population", "Regional center"
+        "Regional code", "Governor", "Area, km^2", "Population", "Regional center"
     };
 
     //Вывод заголовков
@@ -163,19 +194,55 @@ void printDB(Regions *reg, int size)
     cout << string(tableWidth, '-') << endl;
 }
 
-void addElement(Regions *&reg, int &size, bool isLoaded)
+void addElement(Regions *&reg, int &size, bool &isSaved)
 {
-    if (isLoaded)
+    if (reg == nullptr)
     {
-        cout << "Заглушка. Если файл загружен." << endl;
+        cout << "Сначала загрузите в память какой-то файл командой \"6\"" << endl;
+        return;
     }
-    else
+
+    Regions *moreReg = new Regions[size + 1];
+    Regions newReg;
+
+    //Ввод нового элемента
+    cout << "Введите элемент: " << endl;
+    cout << "Код региона: ";
+    cin >> newReg.code;
+    cout << "ФИО губернатора: ";
+    cin.ignore();
+    getline(cin, newReg.governor);
+    cout << "Площадь: ";
+    cin >> newReg.area;
+    cout << "Население: ";
+    cin >> newReg.population;
+    cout << "Областной центр: ";
+    cin.ignore();
+    getline(cin, newReg.regionalCenter);
+
+    //Копирование существующих элементов в новый массив
+    for (int i = 0; i < size; i++)
     {
-        cout << "Сначала загрузите какой-то файл командой \"6\"" << endl;
+        moreReg[i].code = reg[i].code;
+        moreReg[i].governor = reg[i].governor;
+        moreReg[i].area = reg[i].area;
+        moreReg[i].population = reg[i].population;
+        moreReg[i].regionalCenter = reg[i].regionalCenter;
     }
+    moreReg[size].code = newReg.code;
+    moreReg[size].governor = newReg.governor;
+    moreReg[size].area = newReg.area;
+    moreReg[size].population = newReg.population;
+    moreReg[size].regionalCenter = newReg.regionalCenter;
+
+    delete [] reg;
+    reg = moreReg;
+    size++;
+
+    isSaved = false;
 }
 
-void loadFromFile(Regions *&reg, int &size, bool &isLoaded)
+void loadFromFile(Regions *&reg, int &size, bool isSaved)
 {
     //Если текущий открытый файл не сохранён
     //Спросить, сохранять ли его
@@ -195,7 +262,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isLoaded)
     char exitLoad;
 
     //Если массив хранит несохранённые данные
-    if (fin.is_open())
+    if (!isSaved)
     {
         cout << "Предупреждение. Есть несохранённые данные." << endl;
         cout << "Продолжить? (y/n) ";
@@ -205,10 +272,9 @@ void loadFromFile(Regions *&reg, int &size, bool &isLoaded)
             //Уходим отсюда
             return;
         }
-        fin.close();
     }
 
-    isLoaded = false;
+    //isLoaded = false;
 
     delete [] reg;
     reg = nullptr;
@@ -226,9 +292,6 @@ void loadFromFile(Regions *&reg, int &size, bool &isLoaded)
         while (getline(fin, currentLine)) {
             lines++;
         }
-#ifdef DEBUG
-        cout << "lines=" << lines << endl;
-#endif
         size = lines;
 
         fin.close();
@@ -239,7 +302,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isLoaded)
 
         string tempGovernor; //Для временного хранения Ф, И, О
 
-        //Парсить его из файла
+        //Парсить файл
         for (int i = 0; i < lines; i++)
         {
             fin >> reg[i].code;
@@ -254,8 +317,6 @@ void loadFromFile(Regions *&reg, int &size, bool &isLoaded)
             fin >> reg[i].regionalCenter;
         }
 
-        isLoaded = true;
-
         //Не знаю, закрывать ли файл после окончания чтения
         fin.close();
     }
@@ -263,4 +324,35 @@ void loadFromFile(Regions *&reg, int &size, bool &isLoaded)
     {
         cout << "Такого файла нет." << endl;
     }
+}
+
+void saveToFile(Regions *reg, int size, bool &isSaved)
+{
+    //Если в памяти нет ничего, попросить открыть файл
+    if (reg == nullptr)
+    {
+        cout << "Вы ещё ничего не открыли." << endl;
+        return;
+    }
+    ofstream fout;
+    string writePath;
+    
+    cout << "Введите имя файла." << endl;
+    cin.ignore();
+    getline(cin, writePath);
+
+    fout.open(writePath);
+    
+    for (int i = 0; i < size; i++)
+    {
+        fout << reg[i].code << ' ';
+        fout << reg[i].governor << ' ';
+        fout << reg[i].area << ' ';
+        fout << reg[i].population << ' ';
+        fout << reg[i].regionalCenter << endl;
+    }
+
+    isSaved = true;
+
+    fout.close();
 }
