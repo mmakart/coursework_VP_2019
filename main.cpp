@@ -44,7 +44,7 @@ void insertionSort(Regions *reg, int size, int field, bool ascending);
 void sortContents(Regions *reg, int size);
 void findContents(Regions *reg, int size);
 void saveToFile(Regions *reg, int size, bool &isSaved);
-void loadFromFile(Regions *&reg, int &size, bool isSaved);
+void loadFromFile(Regions *&reg, int &size, bool &isSaved);
 
 int main()
 {
@@ -64,7 +64,7 @@ int main()
     printCommands();
     cout << endl;
 
-    cout << "Введите команду. (Список команд можно посмотреть, введя \"h\")" << endl;
+    cout << "Введите команду. (Список команд можно посмотреть, введя \"h\")." << endl;
 
     while (true) 
     {
@@ -127,13 +127,13 @@ EXIT:
     return 0;
 }
 
-//Приглашение ввести команду
+//==========Приглашение ввести команду==========
 void printPrompt()
 {
     cout << "> ";
 }
 
-//Помощь. Список доступных команд
+//==========Помощь. Список доступных команд==========
 void printCommands()
 {
     cout << "+------------------------------------------+" << endl;
@@ -151,9 +151,10 @@ void printCommands()
 
 void printNoData()
 {
-    cout << "Сначала откройте файл." << endl;
+    cout << "Массив данных пуст." << endl;
 }
 
+//==========Печать данных, поданных на вход, в виде таблицы==========
 void printTable(Regions *reg, int size)
 {
     const int colNumber = 5;
@@ -189,12 +190,25 @@ void printTable(Regions *reg, int size)
     cout << string(tableWidth, '-') << endl;
 }
 
+//==========1 - добавление нового элемента с консоли==========
 void addElement(Regions *&reg, int &size, bool &isSaved)
 {
     if (reg == nullptr)
     {
+        char answerCreateFirst; //(y|n) Ответ, добавлять ли первую запись
         printNoData();
-        return;
+        cout << "Хотите создать первую запись? (y/n) ";
+        cin >> answerCreateFirst;
+
+        if (answerCreateFirst == 'n')
+        {
+            return;
+        }
+        else if (answerCreateFirst != 'y')
+        {
+            cout << "Ожидался ввод \"y\" или \"x\"." << endl;
+            return;
+        }
     }
 
     Regions *moreReg = new Regions[size + 1];
@@ -238,6 +252,7 @@ void addElement(Regions *&reg, int &size, bool &isSaved)
     isSaved = false;
 }
 
+//==========2 - Печать всего массива==========
 void printContents(Regions *reg, int size)
 {
     if (reg == nullptr)
@@ -248,6 +263,7 @@ void printContents(Regions *reg, int size)
     printTable(reg, size);
 }
 
+//==========Отсортирован ли уже массив==========
 bool isSorted(Regions *reg, int size, int field, bool ascending)
 {
     switch (field)
@@ -326,6 +342,7 @@ bool isSorted(Regions *reg, int size, int field, bool ascending)
     return true;
 }
 
+//==========Реализация сортировки вставками по заданному полю==========
 void insertionSort(Regions *reg, int size, int field, bool ascending)
 {
     switch (field)
@@ -393,59 +410,21 @@ void insertionSort(Regions *reg, int size, int field, bool ascending)
     }
 }
 
-void sortContents(Regions *reg, int size)
+//==========3 - поиск данных по точному соответствию==========
+void findContents(Regions *reg, int size)
 {
     if (reg == nullptr)
     {
         printNoData();
         return;
     }
-    int field;
-    bool ascending; //Сортировка по возрастанию
-    char answerAscending; //(y|n) Ввод пользователя
 
-    cout << "По какому полю сортировать?" << endl;
-    cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр." << endl;
-    cin >> field;
-
-    if (field < 1 || field > 5)
-    {
-        cout << "Поля с таким номером не существует." << endl;
-        return;
-    }
-
-    field--; //Нумерация начинается с нуля
-
-    cout << "По возрастанию? Иначе по убыванию (y/n) " << endl;
-    cin >> answerAscending;
-
-    if (answerAscending == 'y')
-        ascending = true;
-    else if (answerAscending == 'n')
-        ascending = false;
-    else
-    {
-        cout << "Ожидался ввод \"y\" или \"n\"." << endl;
-        return;
-    }
-
-    if (isSorted(reg, size, field, ascending))
-    {
-        cout << "Массив уже отсортирован по этому полю." << endl;
-        return;
-    }
-
-    insertionSort(reg, size, field, ascending);
-}
-
-void findContents(Regions *reg, int size)
-{
     int fieldSearch; //Поле, по которому надо искать
     string key; //Что ищет пользователь
     vector<Regions> foundEntries; //Найденные записи
 
     cout << "По какому полю искать?" << endl;
-    cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр." << endl;
+    cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр: ";
     cin >> fieldSearch;
 
     if (fieldSearch < 1 || fieldSearch > 5)
@@ -456,7 +435,7 @@ void findContents(Regions *reg, int size)
 
     fieldSearch--; //Нумерация начинается с нуля
 
-    cout << "Ищем: " << endl;
+    cout << "Ищем: ";
     cin.ignore();
     getline(cin, key);
 
@@ -491,7 +470,7 @@ void findContents(Regions *reg, int size)
 
     if (foundEntries.size() != 0)
     {
-        cout << "Результаты: " << endl;
+        cout << endl << "Результаты: " << endl << endl;
 
         //printTable работает с сырым указателем
         printTable(foundEntries.data(), foundEntries.size());
@@ -502,6 +481,57 @@ void findContents(Regions *reg, int size)
     }
 }
 
+//==========4 - сортировка по заданному полю==========
+void sortContents(Regions *reg, int size)
+{
+    if (reg == nullptr)
+    {
+        printNoData();
+        return;
+    }
+    int field;
+    bool ascending; //Сортировка по возрастанию
+    char answerAscending; //(y|n) Ввод пользователя
+
+    cout << "По какому полю сортировать?" << endl;
+    cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр: ";
+    cin >> field;
+
+    if (field < 1 || field > 5)
+    {
+        cout << "Поля с таким номером не существует." << endl;
+        return;
+    }
+
+    field--; //Нумерация начинается с нуля
+
+    cout << "По возрастанию? Иначе по убыванию (y/n) ";
+    cin >> answerAscending;
+
+    if (answerAscending == 'y')
+        ascending = true;
+    else if (answerAscending == 'n')
+        ascending = false;
+    else
+    {
+        cout << "Ожидался ввод \"y\" или \"n\"." << endl;
+        return;
+    }
+
+    if (isSorted(reg, size, field, ascending))
+    {
+        cout << "Массив уже отсортирован по этому полю." << endl;
+        return;
+    }
+
+    insertionSort(reg, size, field, ascending);
+
+    cout << endl << "Результат сортировки: " << endl << endl;
+    printTable(reg, size);
+}
+
+
+//==========5 - сохранение в текстовый файл==========
 void saveToFile(Regions *reg, int size, bool &isSaved)
 {
     if (reg == nullptr)
@@ -512,7 +542,7 @@ void saveToFile(Regions *reg, int size, bool &isSaved)
     ofstream fout;
     string writePath;
     
-    cout << "Введите имя файла." << endl;
+    cout << "Введите путь к файлу: ";
     cin.ignore();
     getline(cin, writePath);
 
@@ -530,9 +560,12 @@ void saveToFile(Regions *reg, int size, bool &isSaved)
     isSaved = true;
 
     fout.close();
+
+    cout << "Массив сохранён в файле \"" << writePath << "\"." << endl;
 }
 
-void loadFromFile(Regions *&reg, int &size, bool isSaved)
+//==========6 - чтение в память из файла==========
+void loadFromFile(Regions *&reg, int &size, bool &isSaved)
 {
     ifstream fin;
     string readPath; //Путь к открываемому файлу
@@ -559,48 +592,51 @@ void loadFromFile(Regions *&reg, int &size, bool isSaved)
     delete [] reg;
     reg = nullptr;
 
-    cout << "Введите путь к файлу: " << endl;
+    isSaved = true;
+
+    cout << "Введите путь к файлу: ";
     cin.ignore();
     getline(cin, readPath);
 
     fin.open(readPath);
 
-    //Если такой файл существует на диске
-    if (fin.is_open())
-    {
-        //Считать количество строк
-        while (getline(fin, currentLine))
-            lines++;
-
-        size = lines;
-
-        fin.close();
-        fin.open(readPath); //Чтобы считывать файл с начала
-
-        //Выделить память под массив
-        reg = new Regions[size];
-
-        string tempGovernor; //Для временного хранения Ф, И, О
-
-        //Парсить файл
-        for (int i = 0; i < lines; i++)
-        {
-            fin >> reg[i].code;
-            fin >> tempGovernor;
-            reg[i].governor += tempGovernor + ' ';
-            fin >> tempGovernor;
-            reg[i].governor += tempGovernor + ' ';
-            fin >> tempGovernor;
-            reg[i].governor += tempGovernor;
-            fin >> reg[i].area;
-            fin >> reg[i].population;
-            fin >> reg[i].regionalCenter;
-        }
-
-        fin.close();
-    }
-    else
+    //Если такого файла нет на диске
+    if (!fin.is_open())
     {
         cout << "Такого файла нет." << endl;
+        return;
     }
+
+    //Считать количество строк
+    while (getline(fin, currentLine))
+        lines++;
+
+    size = lines;
+
+    fin.close();
+    fin.open(readPath); //Чтобы считывать файл с начала
+
+    //Выделить память под массив
+    reg = new Regions[size];
+
+    string tempGovernor; //Для временного хранения Ф, И, О
+
+    //Парсить файл
+    for (int i = 0; i < lines; i++)
+    {
+        fin >> reg[i].code;
+        fin >> tempGovernor;
+        reg[i].governor += tempGovernor + ' ';
+        fin >> tempGovernor;
+        reg[i].governor += tempGovernor + ' ';
+        fin >> tempGovernor;
+        reg[i].governor += tempGovernor;
+        fin >> reg[i].area;
+        fin >> reg[i].population;
+        fin >> reg[i].regionalCenter;
+    }
+
+    fin.close();
+
+    cout << "Чтение файла \"" << readPath << "\" закончено." << endl;
 }
