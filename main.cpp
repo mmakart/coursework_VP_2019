@@ -14,11 +14,11 @@
 */
 
 #include <iostream>
-#include <string>
+#include <cstring>
 #include <iomanip>
 #include <fstream>
 
-#define DEBUG
+//#define DEBUG
 
 using namespace std;
 
@@ -26,17 +26,17 @@ using namespace std;
 struct Regions
 {
     int code; //код региона
-    string governor[3]; //ФИО губернатора
-    double area; //площадь
-    int population; //население
-    string regionalCenter; //региональный центр
+    char governor[3][32]; //ФИО губернатора
+    float area; //площадь
+    float population; //население
+    char regionalCenter[32]; //региональный центр
 };
 
 void printPrompt();
 void printCommands();
 void printDB(Regions *reg, int size);
-void addElement(Regions *reg, int &size, bool isLoaded);
-void loadFromFile(Regions *reg, int &size, bool &isLoaded);
+void addElement(Regions *&reg, int &size, bool isLoaded);
+void loadFromFile(Regions *&reg, int &size, bool &isLoaded);
 
 int main()
 {
@@ -130,26 +130,39 @@ void printCommands()
 
 void printDB(Regions *reg, int size)
 {
-    cout.width(21);
-    cout << "Код региона" << '\t';
-    cout << "ФИО губернатора" << setw(20) << '\t';
-    cout << "Площадь, км^2" << '\t';
-    cout << "Население, тыс. чел." << '\t';
-    cout << "Областной центр" << endl;
+    const int colNumber = 5;
+    int colWidth[colNumber] = {12, 31, 19, 21, 16}; //Ширина каждого столбца
+    int colData[colNumber] = {}; //Длина содержимого 
+    int colSpaces[colNumber] = {}; //Сколько пробелов поставить до/после данных
+    char *tableHeaders[colNumber] =
+    { "Код региона", "ФИО губернатора", "Площадь, тыс. км^2", "Население, тыс. чел.", "Областной центр" };
+    for (int i = 0; i < colNumber; i++) {
+        colData[i] = strlen(tableHeaders[i]);
+    }
+    for (int i = 0; i < colNumber; i++) {
+        colSpaces[i] = colWidth[i] - colData[i];
+    }
+    /*for (int i = 0; i < colNumber; i++) {
+        cout << tableHeaders[i] << string(colSpaces[i], '#');
+    }*/
+    cout << setw(12) << tableHeaders[0];
+    cout << setw(31) << tableHeaders[1];
+    cout << setw(19) << tableHeaders[2];
+    cout << setw(21) << tableHeaders[3];
+    cout << setw(16) << tableHeaders[4];
 
     for (int i = 0; i < size; i++)
     {
-        cout << reg[i].code << '\t';
-        cout << reg[i].governor[0] << " ";
-        cout << reg[i].governor[1] << " ";
-        cout << reg[i].governor[2] << '\t';
-        cout << reg[i].area << '\t';
-        cout << reg[i].population << '\t';
-        cout << reg[i].regionalCenter << endl;
+        
+        cout << setw(12) << reg[i].code;
+        cout << setw(31) << reg[i].governor[0] << " " << reg[i].governor[1] << " " << reg[i].governor[2];
+        cout << setw(19) << reg[i].area;
+        cout << setw(21) << reg[i].population;
+        cout << setw(16) << reg[i].regionalCenter << endl;
     }
 }
 
-void addElement(Regions *reg, int &size, bool isLoaded)
+void addElement(Regions *&reg, int &size, bool isLoaded)
 {
     if (isLoaded)
     {
@@ -161,7 +174,7 @@ void addElement(Regions *reg, int &size, bool isLoaded)
     }
 }
 
-void loadFromFile(Regions *reg, int &size, bool &isLoaded)
+void loadFromFile(Regions *&reg, int &size, bool &isLoaded)
 {
     //Если текущий открытый файл не сохранён
     //Спросить, сохранять ли его
@@ -215,6 +228,7 @@ void loadFromFile(Regions *reg, int &size, bool &isLoaded)
 #ifdef DEBUG
         cout << "lines=" << lines << endl;
 #endif
+        size = lines;
 
         fin.close();
         fin.open(path);
@@ -226,11 +240,13 @@ void loadFromFile(Regions *reg, int &size, bool &isLoaded)
         for (int i = 0; i < lines; i++)
         {
             fin >> reg[i].code;
-            cout << "reg[i].code=" << reg[i].code << endl;
-            fin.ignore();
-            getline(fin, reg[i].governor[0]);
-            getline(fin, reg[i].governor[1]);
-            getline(fin, reg[i].governor[2]);
+            //fin.ignore();
+            //getline(fin, reg[i].governor[0], 32);
+            //getline(fin, reg[i].governor[1], 32);
+            //getline(fin, reg[i].governor[2], 32);
+            fin >> reg[i].governor[0];
+            fin >> reg[i].governor[1];
+            fin >> reg[i].governor[2];
             fin >> reg[i].area;
             fin >> reg[i].population;
             fin >> reg[i].regionalCenter;
