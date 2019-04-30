@@ -17,6 +17,7 @@
 #include <cstring>
 #include <iomanip>
 #include <fstream>
+#include <vector>
 
 //#define DEBUG
 
@@ -27,15 +28,17 @@ struct Regions
 {
     int code; //код региона
     string governor; //ФИО губернатора
-    float area; //площадь
+    int area; //площадь
     int population; //население
     string regionalCenter; //региональный центр
 };
 
 void printPrompt();
 void printCommands();
+void printTable(Regions *reg, int size);
 void addElement(Regions *&reg, int &size, bool &isSaved);
 void printDB(Regions *reg, int size);
+void findContents(Regions *reg, int size);
 void saveToFile(Regions *reg, int size, bool &isSaved);
 void loadFromFile(Regions *&reg, int &size, bool isSaved);
 
@@ -91,7 +94,7 @@ int main()
                 break;
             //Поиск элемента по заданному полю
             case '3':
-                cout << "Ищем элемент" << endl;
+                findContents(regions, size);
                 break;
             //Сортировка по заданному полю
             case '4':
@@ -154,13 +157,8 @@ void printCommands()
     cout << "+------------------------------------------+" << endl;
 }
 
-void printDB(Regions *reg, int size)
+void printTable(Regions *reg, int size)
 {
-    if (reg == nullptr)
-    {
-        cout << "Сначала откройте файл." << endl;
-        return;
-    }
     const int colNumber = 5;
     int colWidth[colNumber] = {16, 31, 13, 13, 22}; //Ширина каждого столбца
     string tableHeaders[colNumber] =
@@ -192,6 +190,17 @@ void printDB(Regions *reg, int size)
         cout << endl;
     }
     cout << string(tableWidth, '-') << endl;
+}
+
+
+void printDB(Regions *reg, int size)
+{
+    if (reg == nullptr)
+    {
+        cout << "Сначала откройте файл." << endl;
+        return;
+    }
+    printTable(reg, size);
 }
 
 void addElement(Regions *&reg, int &size, bool &isSaved)
@@ -240,6 +249,69 @@ void addElement(Regions *&reg, int &size, bool &isSaved)
     size++;
 
     isSaved = false;
+}
+
+void findContents(Regions *reg, int size)
+{
+    int fieldSearch; //Поле, по которому надо искать
+    string key; //Что ищет пользователь
+    vector<Regions> foundEntries; //Номера найденных записей, соответствующих ключу
+
+    cout << "По какому полю искать?" << endl;
+    cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр." << endl;
+    cin >> fieldSearch;
+
+    if (fieldSearch < 1 || fieldSearch > 5)
+    {
+        cout << "Поля с таким номером не существует." << endl;
+        return;
+    }
+
+    fieldSearch--; //Нумерация начинается с нуля
+
+    cout << "Ищем: " << endl;
+    cin.ignore();
+    getline(cin, key);
+
+    switch (fieldSearch)
+    {
+        case 0: //код
+            for (int i = 0; i < size; i++)
+                if (reg[i].code == stoi(key))
+                    foundEntries.push_back(reg[i]);
+            break;
+        case 1: //губернатор
+            for (int i = 0; i < size; i++)
+                if (reg[i].governor == key)
+                    foundEntries.push_back(reg[i]);
+            break;
+        case 2: //площадь
+            for (int i = 0; i < size; i++)
+                if (reg[i].area == stoi(key))
+                    foundEntries.push_back(reg[i]);
+            break;
+        case 3: //население
+            for (int i = 0; i < size; i++)
+                if (reg[i].population == stoi(key))
+                    foundEntries.push_back(reg[i]);
+            break;
+        case 4: //центр
+            for (int i = 0; i < size; i++)
+                if (reg[i].regionalCenter == key)
+                    foundEntries.push_back(reg[i]);
+            break;
+    }
+
+    if (foundEntries.size() != 0)
+    {
+        cout << "Результаты: " << endl;
+        //printTable работает с сырым указателем
+        printTable(foundEntries.data(), foundEntries.size());
+    }
+    else
+    {
+        cout << "Ничего не найдено." << endl;
+    }
 }
 
 void loadFromFile(Regions *&reg, int &size, bool isSaved)
