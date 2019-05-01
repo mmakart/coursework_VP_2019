@@ -822,8 +822,6 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
     delete [] reg;
     reg = nullptr;
 
-    isSaved = true;
-
     cout << "Введите путь к файлу: ";
     cin.ignore();
     getline(cin, path);
@@ -866,6 +864,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
         fin >> reg[i].regionalCenter;
     }
 
+    isSaved = true;
     isFromFile = true;
 
     fin.close();
