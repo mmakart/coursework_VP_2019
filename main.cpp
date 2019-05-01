@@ -168,12 +168,16 @@ int main()
             //Отладочные данные
 #ifdef DEBUG
             case '0':
-                cout << "isSaved=" << changesAreSaved << " isFromFile=" << arrayIsFromFile << " path=" << filePath << endl;
+                cout << "nullptr=" << (regions == nullptr);
+                cout << " size=" << size;
+                cout << " isSaved=" << changesAreSaved;
+                cout << " isFromFile=" << arrayIsFromFile;
+                cout << " path=" << filePath << endl;
                 break;
 #endif
             //Неизвестная команда
             default:
-                cout << "Такой команды нет. Для просмотра доступных команд введите \"h\"" << endl;
+                cout << "Такой команды нет. Для просмотра доступных команд введите \"h\"." << endl;
         }
 
     }
@@ -194,20 +198,20 @@ void printPrompt()
 //==========Помощь. Список доступных команд==========
 void printCommands()
 {
-    cout << "+------------------------------------------+" << endl;
-    cout << "| c - создать новый пустой массив          |" << endl;
-    cout << "| a - ввод нового элемента в массив        |" << endl;
-    cout << "| e - редактирование элемента              |" << endl;
-    cout << "| d - удаление элемента по его позиции     |" << endl;
-    cout << "| l - печать всего массива                 |" << endl;
-    cout << "| f - поиск элемента в массиве             |" << endl;
-    cout << "| s - сортировка массива по заданному полю |" << endl;
-    cout << "| w - сохранение массива в файле           |" << endl;
-    cout << "| r - чтение массива из файла              |" << endl;
-    cout << "+------------------------------------------+" << endl;
-    cout << "| h - список команд                        |" << endl;
-    cout << "| q - выход из программы                   |" << endl;
-    cout << "+------------------------------------------+" << endl;
+    cout << "+-------------------------------------------------+" << endl;
+    cout << "| [c]reate - создать новый пустой массив          |" << endl;
+    cout << "| [a]dd    - ввод нового элемента в массив        |" << endl;
+    cout << "| [e]dit   - редактирование элемента              |" << endl;
+    cout << "| [d]elete - удаление элемента по его позиции     |" << endl;
+    cout << "| [l]ist   - печать всего массива                 |" << endl;
+    cout << "| [f]ind   - поиск элемента в массиве             |" << endl;
+    cout << "| [s]ort   - сортировка массива по заданному полю |" << endl;
+    cout << "| [w]rite  - сохранение массива в файле           |" << endl;
+    cout << "| [r]ead   - чтение массива из файла              |" << endl;
+    cout << "+-------------------------------------------------+" << endl;
+    cout << "| [h]elp   - список команд                        |" << endl;
+    cout << "| [q]uit   - выход из программы                   |" << endl;
+    cout << "+-------------------------------------------------+" << endl;
 }
 
 void printNoData()
@@ -227,7 +231,7 @@ void AskContinue()
 
 void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved, string &path)
 {
-    if (reg == nullptr)
+    if (reg == nullptr && !isFromFile)
     {
         printNoData();
         return;
