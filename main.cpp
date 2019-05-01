@@ -15,7 +15,6 @@
 */
 
 #include <iostream>
-#include <cstring>
 #include <iomanip>
 #include <fstream>
 #include <vector>
@@ -818,15 +817,13 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
         }
     }
 
-    //Очищаем память
-    delete [] reg;
-    reg = nullptr;
+    string enteredPath;
 
     cout << "Введите путь к файлу: ";
     cin.ignore();
-    getline(cin, path);
+    getline(cin, enteredPath);
 
-    fin.open(path);
+    fin.open(enteredPath);
 
     //Если такого файла нет на диске
     if (!fin.is_open())
@@ -834,6 +831,12 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
         cout << "Такого файла нет." << endl;
         return;
     }
+
+    path = enteredPath;
+
+    //Очищаем память
+    delete [] reg;
+    reg = nullptr;
 
     //Считать количество строк
     while (getline(fin, currentLine))
