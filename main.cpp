@@ -358,13 +358,20 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
     Regions *moreReg = new Regions[size + 1];
     Regions newReg;
 
+    //Временные переменные
+    string family, name, patronymic;
+
     //Ввод нового элемента
     cout << "Введите элемент." << endl;
     cout << "Код региона: ";
     cin >> newReg.code;
-    cout << "ФИО губернатора: ";
-    cin.ignore();
-    getline(cin, newReg.governor);
+    cout << "Фамилия губернатора: ";
+    cin >> family;
+    cout << "Имя губернатора: ";
+    cin >> name;
+    cout << "Отчество губернатора: ";
+    cin >> patronymic;
+    newReg.governor = family + " " + name + " " + patronymic;
     cout << "Площадь: ";
     cin >> newReg.area;
     cout << "Население: ";
@@ -514,6 +521,7 @@ void interfaceDeleteContents(Regions *&reg, int &size, bool &isSaved)
         cout << "Элемент " << positionDelete + 1 << " удалён." << endl << endl;
 
         printTable(oneDeletedElement, 1);
+        cout << "Количество записей: " << size << endl;
 
         delete [] oneDeletedElement;
 
@@ -535,6 +543,7 @@ void printContents(Regions *reg, int size)
         return;
     }
     printTable(reg, size);
+    cout << "Количество записей: " << size << endl;
 }
 
 //==========Отсортирован ли уже массив==========
@@ -960,4 +969,5 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
 
     cout << endl << "Содержимое:" << endl << endl;
     printTable(reg, size);
+    cout << "Количество записей: " << size << endl;
 }
