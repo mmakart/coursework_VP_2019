@@ -20,6 +20,8 @@
 #include <fstream>
 #include <vector>
 
+#define DEBUG
+
 using namespace std;
 
 //Регионы РФ
@@ -229,6 +231,7 @@ void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved
     delete [] reg; //Очистка памяти
     reg = nullptr;
     size = 0;
+    path = "";
     isFromFile = false;
     isSaved = true; //т. к. нечему быть несохранённым
 
@@ -744,4 +747,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
     fin.close();
 
     cout << "Чтение файла \"" << path << "\" закончено." << endl;
+
+    cout << endl << "Содержимое:" << endl << endl;
+    printTable(reg, size);
 }
