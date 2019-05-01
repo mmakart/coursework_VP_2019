@@ -20,8 +20,6 @@
 #include <fstream>
 #include <vector>
 
-//#define DEBUG
-
 using namespace std;
 
 //Регионы РФ
@@ -34,17 +32,45 @@ struct Regions
     string regionalCenter; //региональный центр
 };
 
+//Приглашение командной строки
 void printPrompt();
+//Помощь
 void printCommands();
-void printTable(Regions *reg, int size);
+//Предупреждение о несохранённых данных
+void AskContinue();
+//Массив пуст
+void printNoData();
+//Если пользователь ввёл не y, и не n
+void printExpectedYN();
+
+//Очистить массив в памяти
+void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved, string &path);
+
+//Интерфейс + реализация добавления элемента
 void addElement(Regions *&reg, int &size, bool &isSaved);
+
+//Реализация вывода массива в табличной форме
+void printTable(Regions *reg, int size);
+//Интерфейс печати массива
 void printContents(Regions *reg, int size);
+
+//Является ли массив уже отсортированным
 bool isSorted(Regions *reg, int size, int field, bool ascending);
+//Реализация сортировки методом вставок
 void insertionSort(Regions *reg, int size, int field, bool ascending);
-void sortContents(Regions *reg, int size);
+//Интерфейс сортировки
+void sortContents(Regions *reg, int size, bool &isSaved);
+
+//Интерфейс + реализация поиска
 void findContents(Regions *reg, int size);
-void saveToFile(Regions *reg, int size, bool &isSaved);
-void loadFromFile(Regions *&reg, int &size, bool &isSaved);
+
+//Реализация сохранения
+void saveAs(Regions *reg, int size, string path);
+//Интерфейс сохранения
+void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, string &path);
+
+//Интерфейс + реализация загрузки
+void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, string &path);
 
 int main()
 {
@@ -52,8 +78,10 @@ int main()
 
     Regions *regions = nullptr; //База данных в оперативной памяти
     int size = 0; //Количество записей
-    bool changesAreSaved = true;
+    bool changesAreSaved = true; //Сохранены ли изменения
+    string filePath; //По какому пути открыт файл, чтобы сохранять с тем же именем
     char confirmExit; //(y|n) Выйти без сохранения
+    bool arrayIsFromFile = false; //Для сохранения в файл с тем же именем
 
     cout << "+------------------------------------------------+" << endl;
     cout << "| Программа, позволяющая работать с базой данных |" << endl;
@@ -73,6 +101,10 @@ int main()
 
         switch (command)
         {
+            //Создание нового массива
+            case 'c':
+                createNewContents(regions, size, arrayIsFromFile, changesAreSaved, filePath);
+                break;
             //Добавление элемента
             case 'a':
                 addElement(regions, size, changesAreSaved);
@@ -87,15 +119,15 @@ int main()
                 break;
             //Сортировка по заданному полю
             case 's':
-                sortContents(regions, size);
+                sortContents(regions, size, changesAreSaved);
                 break;
             //Сохранение в файл
             case 'w':
-                saveToFile(regions, size, changesAreSaved);
+                interfaceSave(regions, size, changesAreSaved, arrayIsFromFile, filePath);
                 break;
             //Чтение из файла
             case 'r':
-                loadFromFile(regions, size, changesAreSaved);
+                loadFromFile(regions, size, changesAreSaved, arrayIsFromFile, filePath);
                 break;
             //Помощь
             case 'h':
@@ -106,13 +138,19 @@ int main()
                 if (changesAreSaved)
                     goto EXIT;
 
-                cout << "Есть несохранённые изменения. Всё равно выйти? (y/n) ";
+                AskContinue();
                 cin >> confirmExit;
 
                 if (confirmExit == 'y')
                     goto EXIT;
                 else
                     break;
+            //Отладочные данные
+#ifdef DEBUG
+            case '0':
+                cout << "isSaved=" << changesAreSaved << " isFromFile=" << arrayIsFromFile << " path=" << filePath << endl;
+                break;
+#endif
             //Неизвестная команда
             default:
                 cout << "Такой команды нет. Для просмотра доступных команд введите \"h\"" << endl;
@@ -137,6 +175,7 @@ void printPrompt()
 void printCommands()
 {
     cout << "+------------------------------------------+" << endl;
+    cout << "| c - создать новый пустой массив          |" << endl;
     cout << "| a - ввод нового элемента в массив        |" << endl;
     cout << "| l - печать всего массива                 |" << endl;
     cout << "| f - поиск элемента в массиве             |" << endl;
@@ -152,6 +191,48 @@ void printCommands()
 void printNoData()
 {
     cout << "Массив данных пуст." << endl;
+}
+
+void printExpectedYN()
+{
+    cout << "Ожидался ввод \"y\" или \"n\"." << endl;
+}
+
+void AskContinue()
+{
+    cout << "Есть несохранённые данные. Продолжить? (y/n) ";
+}
+
+void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved, string &path)
+{
+    if (reg == nullptr)
+    {
+        printNoData();
+        return;
+    }
+
+    char confirmContinue; //(y|n) Продолжить
+
+    if (!isSaved)
+    {
+        AskContinue();
+        cin >> confirmContinue;
+        if (confirmContinue == 'n')
+            return;
+        else if (confirmContinue != 'y')
+        {
+            printExpectedYN();
+            return;
+        }
+    }
+
+    delete [] reg; //Очистка памяти
+    reg = nullptr;
+    size = 0;
+    isFromFile = false;
+    isSaved = true; //т. к. нечему быть несохранённым
+
+    cout << "Массив данных очистился." << endl;
 }
 
 //==========Печать данных, поданных на вход, в виде таблицы==========
@@ -206,7 +287,7 @@ void addElement(Regions *&reg, int &size, bool &isSaved)
         }
         else if (answerCreateFirst != 'y')
         {
-            cout << "Ожидался ввод \"y\" или \"x\"." << endl;
+            printExpectedYN();
             return;
         }
     }
@@ -482,7 +563,7 @@ void findContents(Regions *reg, int size)
 }
 
 //==========4 - сортировка по заданному полю==========
-void sortContents(Regions *reg, int size)
+void sortContents(Regions *reg, int size, bool &isSaved)
 {
     if (reg == nullptr)
     {
@@ -514,7 +595,7 @@ void sortContents(Regions *reg, int size)
         ascending = false;
     else
     {
-        cout << "Ожидался ввод \"y\" или \"n\"." << endl;
+        printExpectedYN();
         return;
     }
 
@@ -526,27 +607,56 @@ void sortContents(Regions *reg, int size)
 
     insertionSort(reg, size, field, ascending);
 
+    isSaved = false;
+
     cout << endl << "Результат сортировки: " << endl << endl;
     printTable(reg, size);
 }
 
 
 //==========5 - сохранение в текстовый файл==========
-void saveToFile(Regions *reg, int size, bool &isSaved)
+void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, string &path)
 {
     if (reg == nullptr)
     {
         printNoData();
         return;
     }
-    ofstream fout;
-    string writePath;
+    char confirmSave = 'c'; //(y|a|c)
     
-    cout << "Введите путь к файлу: ";
-    cin.ignore();
-    getline(cin, writePath);
+    //Если файл с таким именем был открыт/сохранён ранее
+    if (isFromFile)
+    {
+        cout << "Сохранить как \"" << path << "\"? ([y]es/save [a]s/[c]ancel) ";
+        cin >> confirmSave;
+        if (confirmSave == 'c')
+            return;
+        else if (confirmSave != 'y' && confirmSave != 'a')
+        {
+            cout << "Ожидался ввод \"y\", \"a\" или \"c\"." << endl;
+            return;
+        }
+    }
+    if (!isFromFile || confirmSave == 'a')
+    {
+        cout << "Введите путь к файлу: ";
+        cin.ignore();
+        getline(cin, path);
+    }
 
-    fout.open(writePath);
+    //Сам процесс сохранения
+    saveAs(reg, size, path);
+
+    isFromFile = true; //Потому что данные в памяти и в файле совпадают
+    isSaved = true;
+
+    cout << "Массив сохранён в файле \"" << path << "\"." << endl;
+}
+
+void saveAs(Regions *reg, int size, string path)
+{
+    ofstream fout;
+    fout.open(path);
     
     for (int i = 0; i < size; i++)
     {
@@ -556,19 +666,13 @@ void saveToFile(Regions *reg, int size, bool &isSaved)
         fout << reg[i].population << ' ';
         fout << reg[i].regionalCenter << endl;
     }
-
-    isSaved = true;
-
     fout.close();
-
-    cout << "Массив сохранён в файле \"" << writePath << "\"." << endl;
 }
 
 //==========6 - чтение в память из файла==========
-void loadFromFile(Regions *&reg, int &size, bool &isSaved)
+void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, string &path)
 {
     ifstream fin;
-    string readPath; //Путь к открываемому файлу
 
     string currentLine; //Текущая строка файла
     int lines = 0; //Счётчик строк файла
@@ -578,8 +682,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved)
     //Если в памяти есть несохранённые изменения
     if (!isSaved)
     {
-        cout << "Предупреждение. Есть несохранённые данные." << endl;
-        cout << "Продолжить? (y/n) ";
+        AskContinue();
         cin >> confirmContinue;
         if (confirmContinue != 'y')
         {
@@ -596,9 +699,9 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved)
 
     cout << "Введите путь к файлу: ";
     cin.ignore();
-    getline(cin, readPath);
+    getline(cin, path);
 
-    fin.open(readPath);
+    fin.open(path);
 
     //Если такого файла нет на диске
     if (!fin.is_open())
@@ -614,7 +717,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved)
     size = lines;
 
     fin.close();
-    fin.open(readPath); //Чтобы считывать файл с начала
+    fin.open(path); //Чтобы считывать файл с начала
 
     //Выделить память под массив
     reg = new Regions[size];
@@ -636,7 +739,9 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved)
         fin >> reg[i].regionalCenter;
     }
 
+    isFromFile = true;
+
     fin.close();
 
-    cout << "Чтение файла \"" << readPath << "\" закончено." << endl;
+    cout << "Чтение файла \"" << path << "\" закончено." << endl;
 }
