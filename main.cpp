@@ -359,12 +359,21 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
     Regions newReg;
 
     //Временные переменные
-    string family, name, patronymic;
+    string family, name, patronymic, strCode, strArea, strPopulation;
 
     //Ввод нового элемента
     cout << "Введите элемент." << endl;
+
     cout << "Код региона: ";
-    cin >> newReg.code;
+    cin >> strCode;
+    try {
+        newReg.code = stoi(strCode);
+    }
+    catch(exception ex) {
+        cout << "Введено не число." << endl;
+        return;
+    }
+
     cout << "Фамилия губернатора: ";
     cin >> family;
     cout << "Имя губернатора: ";
@@ -372,10 +381,25 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
     cout << "Отчество губернатора: ";
     cin >> patronymic;
     newReg.governor = family + " " + name + " " + patronymic;
+
     cout << "Площадь: ";
-    cin >> newReg.area;
+    cin >> strArea;
+    try {
+        newReg.area = stoi(strArea);
+    }
+    catch(exception ex) {
+        cout << "Введено не число." << endl;
+        return;
+    }
     cout << "Население: ";
-    cin >> newReg.population;
+    cin >> strPopulation;
+    try {
+        newReg.population = stoi(strPopulation);
+    }
+    catch(exception ex) {
+        cout << "Введено не число." << endl;
+        return;
+    }
     cout << "Областной центр: ";
     cin.ignore();
     getline(cin, newReg.regionalCenter);
