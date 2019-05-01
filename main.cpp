@@ -50,6 +50,9 @@ void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved
 //Интерфейс + реализация добавления элемента
 void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile);
 
+//Интерфейс + реализация редактирования полей элемента
+void editContents(Regions *reg, int size, bool &isSaved);
+
 //Релизация удаления элемента по его номеру
 void deleteContentsByNumber(Regions *&reg, int &size, int position);
 //Интерфейс удаления элементов
@@ -117,6 +120,10 @@ int main()
             //Добавление элемента
             case 'a':
                 addElement(regions, size, changesAreSaved, arrayIsFromFile);
+                break;
+            //Редактирование элемента
+            case 'e':
+                editContents(regions, size, changesAreSaved);
                 break;
             //Удаление записи из массива
             case 'd':
@@ -190,6 +197,7 @@ void printCommands()
     cout << "+------------------------------------------+" << endl;
     cout << "| c - создать новый пустой массив          |" << endl;
     cout << "| a - ввод нового элемента в массив        |" << endl;
+    cout << "| e - редактирование элемента              |" << endl;
     cout << "| d - удаление элемента по его позиции     |" << endl;
     cout << "| l - печать всего массива                 |" << endl;
     cout << "| f - поиск элемента в массиве             |" << endl;
@@ -382,6 +390,78 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
     size++;
 
     isSaved = false;
+}
+
+void editContents(Regions *reg, int size, bool &isSaved)
+{
+    if (reg == nullptr)
+    {
+        printNoData();
+        return;
+    }
+
+    int fieldEdit;
+    int position;
+
+    cout << "Какую запись редактировать? ";
+    cin >> position;
+    position--; //Нумерация начинается с нуля
+
+    if (position < 0 || position >= size)
+    {
+        cout << "Такой записи нет." << endl;
+        return;
+    }
+
+    //Для показа пользователю редактируемого элемента
+    Regions *oneEditedElement = new Regions[1];
+    oneEditedElement[0] = reg[position];
+
+    cout << "Вы выбрали запись: " << endl;
+    printTable(oneEditedElement, 1);
+
+    cout << "Какое поле заменить?" << endl;
+    cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр: ";
+    cin >> fieldEdit;
+    fieldEdit--; //Нумерация начинается с нуля
+
+    if (fieldEdit < 0 || fieldEdit >= 5)
+    {
+        cout << "Такого поля нет." << endl;
+        return;
+    }
+
+    cout << "Введите новое значение: ";
+
+    switch (fieldEdit)
+    {
+        case 0:
+            cin >> reg[position].code;
+            break;
+        case 1:
+            cin.ignore();
+            getline(cin, reg[position].governor);
+            break;
+        case 2:
+            cin >> reg[position].area;
+            break;
+        case 3:
+            cin >> reg[position].population;
+            break;
+        case 4:
+            cin.ignore();
+            getline(cin, reg[position].regionalCenter);
+            break;
+    }
+
+    oneEditedElement[0] = reg[position];
+
+    cout << "Отредактированная запись: " << endl;
+    printTable(oneEditedElement, 1);
+
+    isSaved = false;
+    
+    delete [] oneEditedElement;
 }
 
 void deleteContentsByNumber(Regions *&reg, int &size, int position)
