@@ -49,7 +49,7 @@ void printExpectedYN();
 void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved, string &path);
 
 //Интерфейс + реализация добавления элемента
-void addElement(Regions *&reg, int &size, bool &isSaved);
+void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile);
 
 //Релизация удаления элемента по его номеру
 void deleteContentsByNumber(Regions *&reg, int &size, int position);
@@ -117,11 +117,12 @@ int main()
                 break;
             //Добавление элемента
             case 'a':
-                addElement(regions, size, changesAreSaved);
+                addElement(regions, size, changesAreSaved, arrayIsFromFile);
                 break;
             //Удаление записи из массива
             case 'd':
                 interfaceDeleteContents(regions, size, changesAreSaved);
+                break;
             //Печать базы данных
             case 'l':
                 printContents(regions, size);
@@ -322,9 +323,9 @@ void printTable(Regions *reg, int size, vector<int> positions)
 }
 
 //==========1 - добавление нового элемента с консоли==========
-void addElement(Regions *&reg, int &size, bool &isSaved)
+void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
 {
-    if (reg == nullptr)
+    if (reg == nullptr && !isFromFile)
     {
         char answerCreateFirst; //(y|n) Ответ, добавлять ли первую запись
         printNoData();
