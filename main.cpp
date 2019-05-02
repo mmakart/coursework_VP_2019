@@ -41,10 +41,12 @@ void printCommands();
 void AskContinue();
 //Массив пуст
 void printNoData();
-//Если пользователь ввёл не y, и не n
-void printExpectedYN();
 //Если пользователь ввёл не число
 void printExpectedNumber();
+//Если пользователь ввёл не y, и не n
+void printExpectedYN();
+//Если записи с этим номером нет
+void printNoSuchElement();
 
 //Очистить массив в памяти
 void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved, string &path);
@@ -220,6 +222,11 @@ void printCommands()
     cout << "+-------------------------------------------------+" << endl;
 }
 
+void AskContinue()
+{
+    cout << "Есть несохранённые данные. Продолжить? (y/n) ";
+}
+
 void printNoData()
 {
     cout << "Массив данных пуст." << endl;
@@ -230,15 +237,16 @@ void printExpectedNumber()
     cout << "Ошибка считывания числа: неверный формат." << endl;
 }
 
+void printNoSuchElement()
+{
+    cout << "Такого элемента нет." << endl;
+}
+
 void printExpectedYN()
 {
     cout << "Ожидался ввод \"y\" или \"n\"." << endl;
 }
 
-void AskContinue()
-{
-    cout << "Есть несохранённые данные. Продолжить? (y/n) ";
-}
 
 void printBadFileData(string path, int position)
 {
@@ -518,12 +526,11 @@ void editContents(Regions *reg, int size, bool &isSaved)
     //что введённые данные были числом
     string strCode, strArea, strPopulation;
 
-    //Для временного хранения Ф, И, О по отдельности
+    //Для временного хранения Ф, И, О губернатора по отдельности
     string family, name, patronymic;
-    //Для хранения номера редактируемого элемента
-    vector<int> vectorPositionEdit;
 
-    cout << "Какую запись редактировать? ";
+    cout << "Введите позицию от 1 до " << size << " (0 для выхода)." << endl;
+    cout << "Позиция: ";
     cin >> strPositionEdit;
     //Проверка на то, что введённые данные - число
     try {
@@ -538,16 +545,15 @@ void editContents(Regions *reg, int size, bool &isSaved)
 
     if (positionEdit < 0 || positionEdit >= size)
     {
-        cout << "Такой записи нет." << endl;
+        printNoSuchElement();
         return;
     }
 
     //Для показа пользователю редактируемого элемента отдельно
     Regions oneEditedElement = reg[positionEdit];
-    vectorPositionEdit.push_back(positionEdit);
 
     cout << "Вы выбрали запись: " << endl;
-    printTable(reg, size, vectorPositionEdit);
+    printTable(oneEditedElement);
 
     cout << "Какое поле заменить?" << endl;
     cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр: ";
@@ -635,7 +641,7 @@ void editContents(Regions *reg, int size, bool &isSaved)
     oneEditedElement = reg[positionEdit];
 
     cout << "Отредактированная запись: " << endl;
-    printTable(reg, size, vectorPositionEdit);
+    printTable(oneEditedElement);
 
     isSaved = false;
 }
@@ -672,7 +678,7 @@ void interfaceDeleteContents(Regions *&reg, int &size, bool &isSaved)
         return;
     }
 
-    cout << "Введите позицию от 1 до " << size << ". (0 для выхода)." << endl;
+    cout << "Введите позицию от 1 до " << size << " (0 для выхода)." << endl;
 
     int positionDelete; //Номер элемента для удаления
     vector<int> vectorPositionDelete;
@@ -684,7 +690,7 @@ void interfaceDeleteContents(Regions *&reg, int &size, bool &isSaved)
 
     if (positionDelete < 0 || positionDelete >= size)
     {
-        cout << "Такого элемента нет." << endl;
+        printNoSuchElement();
         return;
     }
 
