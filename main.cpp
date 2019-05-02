@@ -63,6 +63,7 @@ void interfaceDeleteContents(Regions *&reg, int &size, bool &isSaved);
 //Реализация вывода массива в табличной форме
 void printTable(Regions *reg, int size);
 void printTable(Regions *reg, int size, vector<int> positions);
+void printTable(Regions reg);
 //Интерфейс печати массива
 void printContents(Regions *reg, int size);
 
@@ -349,6 +350,40 @@ void printTable(Regions *reg, int size, vector<int> positions)
         cout << left << setw(colWidth[4]) << reg[positions[i]].regionalCenter;
         cout << endl;
     }
+    cout << string(tableWidth, '-') << endl;
+}
+
+//Печать в виде таблицы единственного элемента
+void printTable(Regions reg)
+{
+    const int colNumber = 5;
+    static int colWidth[colNumber] = {16, 31, 13, 13, 22}; //Ширина каждого столбца
+    static string tableHeaders[colNumber] =
+    {
+        "Regional code", "Governor", "Area, km^2", "Population", "Regional center"
+    };
+
+    int tableWidth = 0;
+    for (int i = 0; i < colNumber; i++) {
+        tableWidth += colWidth[i];
+    }
+
+    //Вывод заголовков
+    cout << string(tableWidth, '=') << endl;
+    for (int i = 0; i < colNumber; i++) {
+        cout << left << setw(colWidth[i]) << tableHeaders[i];
+    }
+    cout << endl;
+    cout << string(tableWidth, '-') << endl;
+
+    //Вывод содержимого таблицы
+    cout << setw(colWidth[0]) << reg.code;
+    cout << setw(colWidth[1]) << reg.governor;
+    cout << right << setw(colWidth[2] - 3) << reg.area << "   ";
+    cout << right << setw(colWidth[3] - 3) << reg.population << "   ";
+    cout << left << setw(colWidth[4]) << reg.regionalCenter;
+    cout << endl;
+
     cout << string(tableWidth, '-') << endl;
 }
 
@@ -662,7 +697,7 @@ void interfaceDeleteContents(Regions *&reg, int &size, bool &isSaved)
     cout << "Элемент " << positionDelete + 1 << " удалён." << endl;
 
     //Печать удалённого элемента
-    printTable(reg, size, vectorPositionDelete);
+    printTable(oneDeletedElement);
     cout << "Количество записей: " << size << endl;
 
     isSaved = false;
