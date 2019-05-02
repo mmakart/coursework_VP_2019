@@ -78,8 +78,8 @@ vector<int> findContents(Regions *reg, int size, int field, string key);
 //Интерфейс поиска
 void interfaceFindContentsToShow(Regions *reg, int size);
 
-//Реализация сохранения
-void saveAs(Regions *reg, int size, string path);
+//Реализация сохранения, возвращает код успеха/ошибки
+int saveAs(Regions *reg, int size, string path);
 //Интерфейс сохранения
 void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, string &path);
 
@@ -935,6 +935,12 @@ void sortContents(Regions *reg, int size, bool &isSaved)
 void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, string &path)
 {
     char confirmSave;
+ 
+    //Для неприкосновенности переменной path в случае ошибки
+    string enteredPath;
+
+    //Удалось ли открыть файл для сохранения
+    bool success = false;
 
     if (reg == nullptr)
     {
@@ -968,22 +974,33 @@ void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, stri
     {
         cout << "Введите путь к файлу: ";
         cin.ignore();
-        getline(cin, path);
+        getline(cin, enteredPath);
     }
 
     //Сам процесс сохранения
-    saveAs(reg, size, path);
+    success = (saveAs(reg, size, enteredPath) == 0 ? true : false);
 
-    isFromFile = true; //Потому что данные в памяти и в файле совпадают
-    isSaved = true;
+    if (success)
+    {
+        isFromFile = true; //Потому что данные в памяти и в файле совпадают
+        isSaved = true;
+        path = enteredPath;
 
-    cout << "Массив сохранён в файле \"" << path << "\"." << endl;
+        cout << "Массив сохранён в файле \"" << enteredPath << "\"." << endl;
+    }
+    else
+    {
+        cout << "Не удалось сохранить файл по пути \"" << enteredPath << "\"." << endl;
+    }
 }
 
-void saveAs(Regions *reg, int size, string path)
+int saveAs(Regions *reg, int size, string path)
 {
     ofstream fout;
     fout.open(path);
+
+    if (!fout.is_open())
+        return -1;
     
     for (int i = 0; i < size; i++)
     {
@@ -994,6 +1011,8 @@ void saveAs(Regions *reg, int size, string path)
         fout << reg[i].regionalCenter << endl;
     }
     fout.close();
+
+    return 0;
 }
 
 void handleFailingFileReadingException(Regions *&reg, int &size, int position, string &path, ifstream &fin)
@@ -1029,6 +1048,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
         }
     }
 
+    //Для неприкосновенности переменной path в случае ошибки
     string enteredPath;
 
     cout << "Введите путь к файлу: ";
