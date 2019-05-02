@@ -189,6 +189,7 @@ int main()
 
 EXIT:
 
+    delete [] regions;
     cout << "Завершение..." << endl;
 
     return 0;
