@@ -83,9 +83,6 @@ int saveAs(Regions *reg, int size, string path);
 //Интерфейс сохранения
 void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, string &path);
 
-//Обработка ошибочных данных читаемого файла
-void handleFailingFileReadingException(Regions *&reg, int &size, int position, string &path, ifstream &fin);
-
 //Интерфейс + реализация загрузки
 void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, string &path);
 
@@ -96,9 +93,10 @@ int main()
     Regions *regions = nullptr; //База данных в оперативной памяти
     int size = 0; //Количество записей
     bool changesAreSaved = true; //Сохранены ли изменения
-    string filePath; //По какому пути открыт файл, чтобы сохранять с тем же именем
-    char confirmExit; //(y|n) Выйти без сохранения
     bool arrayIsFromFile = false; //Для сохранения в файл с тем же именем
+    string filePath; //По какому пути открыт файл, чтобы сохранять с тем же именем
+
+    char confirmExit; //(y|n) Выйти без сохранения
 
     cout << "+------------------------------------------------+" << endl;
     cout << "| Программа, позволяющая работать с базой данных |" << endl;
@@ -106,13 +104,14 @@ int main()
     cout << "+------------------------------------------------+" << endl;
     cout << endl;
 
+    //Первоначальный вывод списка команд
     printCommands();
-    cout << endl;
 
     cout << "Введите команду. (Список команд можно посмотреть, введя \"h\")." << endl;
 
     while (true) 
     {
+        //Приглашение на ввод команды
         printPrompt(filePath);
         cin >> command;
 
@@ -134,7 +133,7 @@ int main()
             case 'd':
                 interfaceDeleteContents(regions, size, changesAreSaved);
                 break;
-            //Печать базы данных
+            //Печать массива
             case 'l':
                 printContents(regions, size);
                 break;
@@ -195,13 +194,13 @@ EXIT:
     return 0;
 }
 
-//==========Приглашение ввести команду==========
+//========== Приглашение ввести команду ==========
 void printPrompt(string path)
 {
     cout << path << "> ";
 }
 
-//==========Помощь. Список доступных команд==========
+//========== Помощь. Список доступных команд ==========
 void printCommands()
 {
     cout << "+-------------------------------------------------+" << endl;
@@ -227,7 +226,7 @@ void printNoData()
 
 void printExpectedNumber()
 {
-    cout << "Ожидался ввод числа." << endl;
+    cout << "Ошибка считывания числа: неверный формат." << endl;
 }
 
 void printExpectedYN()
@@ -240,6 +239,13 @@ void AskContinue()
     cout << "Есть несохранённые данные. Продолжить? (y/n) ";
 }
 
+void printBadFileData(string path, int position)
+{
+    cout << "Ошибка чтения файла \"" << path << "\"." << endl;
+    cout << "Одно из полей в строке " << position + 1 << " должно быть числом." << endl;
+}
+
+//========== Очистка текущего массива и создание нового ==========
 void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved, string &path)
 {
     if (reg == nullptr && !isFromFile)
@@ -273,16 +279,17 @@ void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved
     cout << "Массив данных очистился." << endl;
 }
 
-//==========Печать данных, поданных на вход, в виде таблицы==========
+//========== Печать данных, поданных на вход, в виде таблицы ==========
 void printTable(Regions *reg, int size)
 {
-    const int colNumber = 5;
+    const int colNumber = 5; //Количество столбцов
     static int colWidth[colNumber] = {16, 31, 13, 13, 22}; //Ширина каждого столбца
     static string tableHeaders[colNumber] =
     {
         "Regional code", "Governor", "Area, km^2", "Population", "Regional center"
     };
 
+    //Подсчёт ширины таблицы
     int tableWidth = 0;
     for (int i = 0; i < colNumber; i++) {
         tableWidth += colWidth[i];
@@ -309,7 +316,7 @@ void printTable(Regions *reg, int size)
     cout << string(tableWidth, '-') << endl;
 }
 
-//Печатать только те данные, номера котрых указаны в positions
+//========== Печатать только те данные, номера которых указаны в positions ==========
 void printTable(Regions *reg, int size, vector<int> positions)
 {
     const int colNumber = 5;
@@ -345,12 +352,13 @@ void printTable(Regions *reg, int size, vector<int> positions)
     cout << string(tableWidth, '-') << endl;
 }
 
-//==========1 - добавление нового элемента с консоли==========
+//========== 1 - добавление нового элемента с консоли ==========
 void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
 {
     if (reg == nullptr && !isFromFile)
     {
         char answerCreateFirst; //(y|n) Ответ, добавлять ли первую запись
+
         printNoData();
         cout << "Хотите создать первую запись? (y/n) ";
         cin >> answerCreateFirst;
@@ -366,7 +374,9 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
         }
     }
 
+    //Новый массив данных с размером на единицу большим
     Regions *moreReg = new Regions[size + 1];
+    //Добавляемый элемент
     Regions newReg;
 
     //Временные переменные
@@ -377,6 +387,7 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
 
     cout << "Код региона: ";
     cin >> strCode;
+    //Проверка на то, что введённые данные - число
     try {
         newReg.code = stoi(strCode);
     }
@@ -395,6 +406,7 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
 
     cout << "Площадь: ";
     cin >> strArea;
+    //Проверка на то, что введённые данные - число
     try {
         newReg.area = stoi(strArea);
     }
@@ -404,6 +416,7 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
     }
     cout << "Население: ";
     cin >> strPopulation;
+    //Проверка на то, что введённые данные - число
     try {
         newReg.population = stoi(strPopulation);
     }
@@ -431,13 +444,17 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
     moreReg[size].population = newReg.population;
     moreReg[size].regionalCenter = newReg.regionalCenter;
 
+    //Очистка старого ненужного массива
     delete [] reg;
+    //Теперь он указывает на новые данные
     reg = moreReg;
     size++;
 
+    //Теперь есть несохранённые изменения
     isSaved = false;
 }
 
+//========== Редактирование элемента ==========
 void editContents(Regions *reg, int size, bool &isSaved)
 {
     if (reg == nullptr)
@@ -447,14 +464,16 @@ void editContents(Regions *reg, int size, bool &isSaved)
     }
 
     //Номер записи для редактирования
-    int position;
-    string strPosition;
+    int positionEdit;
+    //Для проверки на правильность ввода числа
+    string strPositionEdit;
 
     //Поле записи для редактирования
     int fieldEdit;
+    //Для проверки на правильность ввода числа
     string strFieldEdit;
 
-    //Временные переменные для неприкосновенности данных при ошибке
+    //Временные переменные для неприкосновенности основного массива при ошибке
     int code;
     string governor;
     int area, population;
@@ -466,35 +485,39 @@ void editContents(Regions *reg, int size, bool &isSaved)
 
     //Для временного хранения Ф, И, О по отдельности
     string family, name, patronymic;
+    //Для хранения номера редактируемого элемента
+    vector<int> vectorPositionEdit;
 
     cout << "Какую запись редактировать? ";
-    cin >> strPosition;
+    cin >> strPositionEdit;
+    //Проверка на то, что введённые данные - число
     try {
-        position = stoi(strPosition);
+        positionEdit = stoi(strPositionEdit);
     }
     catch (exception ex) {
         printExpectedNumber();
         return;
     }
 
-    position--; //Нумерация начинается с нуля
+    positionEdit--; //Нумерация начинается с нуля
 
-    if (position < 0 || position >= size)
+    if (positionEdit < 0 || positionEdit >= size)
     {
         cout << "Такой записи нет." << endl;
         return;
     }
 
     //Для показа пользователю редактируемого элемента отдельно
-    Regions *oneEditedElement = new Regions[1];
-    oneEditedElement[0] = reg[position];
+    Regions oneEditedElement = reg[positionEdit];
+    vectorPositionEdit.push_back(positionEdit);
 
     cout << "Вы выбрали запись: " << endl;
-    printTable(oneEditedElement, 1);
+    printTable(reg, size, vectorPositionEdit);
 
     cout << "Какое поле заменить?" << endl;
     cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр: ";
     cin >> strFieldEdit;
+    //Проверка на то, что введённые данные - число
     try {
         fieldEdit = stoi(strFieldEdit);
     }
@@ -515,8 +538,10 @@ void editContents(Regions *reg, int size, bool &isSaved)
 
     switch (fieldEdit)
     {
+        //Код региона
         case 0:
             cin >> strCode;
+            //Проверка на то, что ввёденные данные - число
             try {
                 code = stoi(strCode);
             }
@@ -524,8 +549,9 @@ void editContents(Regions *reg, int size, bool &isSaved)
                 printExpectedNumber();
                 return;
             }
-            reg[position].code = code; 
+            reg[positionEdit].code = code; 
             break;
+        //ФИО губернатора
         case 1:
             cout << "Фамилия: ";
             cin >> family;
@@ -534,64 +560,75 @@ void editContents(Regions *reg, int size, bool &isSaved)
             cout << "Отчество: ";
             cin >> patronymic;
             governor = family + ' ' + name + ' ' + patronymic;
-            reg[position].governor = governor; 
+            reg[positionEdit].governor = governor; 
             break;
+        //Площадь
         case 2:
             cin >> strArea;
+            //Проверка на то, что ввёденные данные - число
             try {
                 area = stoi(strArea);
             }
             catch (exception ex) {
-                printExpectedNumber;
+                printExpectedNumber();
                 return;
             }
-            reg[position].area = area; 
+            reg[positionEdit].area = area; 
             break;
+        //Население
         case 3:
             cin >> strPopulation;
+            //Проверка на то, что ввёденные данные - число
             try {
                 population = stoi(strPopulation);
             }
             catch (exception ex) {
-                printExpectedNumber;
+                printExpectedNumber();
                 return;
             }
-            reg[position].population = population; 
+            reg[positionEdit].population = population; 
             break;
+        //Областной центр
         case 4:
             cin.ignore();
             getline(cin, regionalCenter);
-            reg[position].regionalCenter = regionalCenter; 
+            reg[positionEdit].regionalCenter = regionalCenter; 
             break;
     }
 
-    oneEditedElement[0] = reg[position];
+    //Для печати этого нового изменённого элемента
+    oneEditedElement = reg[positionEdit];
 
     cout << "Отредактированная запись: " << endl;
-    printTable(oneEditedElement, 1);
+    printTable(reg, size, vectorPositionEdit);
 
     isSaved = false;
-    
-    delete [] oneEditedElement;
 }
 
+//========== Релизация процесса удаления элемента ==========
 void deleteContentsByNumber(Regions *&reg, int &size, int position)
 {
     Regions *lessReg = new Regions[size - 1]; 
     
+    //До позиции удаляемого элемента расположение данных не меняется
     for (int i = 0; i < position; i++)
         lessReg[i] = reg[i];
+    //Все последующие элементы смещаются на одну позицию
     for (int i = position; i < size-1; i++)
         lessReg[i] = reg[i+1];
 
+    //Очистка старого ненужного массива
     delete [] reg;
+    //Теперь он указывает на новые данные
     reg = lessReg;
     size--;
 
+    //Защита от отрицательного размера
     if (size == 0)
         reg = nullptr;
 }
 
+//========== Удаление элемента ==========
 void interfaceDeleteContents(Regions *&reg, int &size, bool &isSaved)
 {
     if (reg == nullptr)
@@ -600,41 +637,38 @@ void interfaceDeleteContents(Regions *&reg, int &size, bool &isSaved)
         return;
     }
 
-    cout << "Если удалять элемент не нужно, введите число, меньшее 1." << endl;
+    cout << "Введите позицию от 1 до " << size << ". (0 для выхода)." << endl;
 
     int positionDelete; //Номер элемента для удаления
+    vector<int> vectorPositionDelete;
+    vectorPositionDelete.push_back(positionDelete);
 
     cout << "Позиция: ";
     cin >> positionDelete;
     positionDelete--; //Нумерация начинается с нуля
 
-
-    if (0 <= positionDelete && positionDelete < size)
+    if (positionDelete < 0 || positionDelete >= size)
     {
-        //Для показа уже удалённого элемента
-        Regions *oneDeletedElement = new Regions[1];
-        oneDeletedElement[0] = reg[positionDelete];
-
-        //Сам процесс удаления
-        deleteContentsByNumber(reg, size, positionDelete);
-
-        cout << "Элемент " << positionDelete + 1 << " удалён." << endl << endl;
-
-        printTable(oneDeletedElement, 1);
-        cout << "Количество записей: " << size << endl;
-
-        delete [] oneDeletedElement;
-
-        isSaved = false;
-    }
-    else
-    {
-        cout << "Такого номера нет." << endl;
+        cout << "Такого элемента нет." << endl;
         return;
     }
+
+    //Для показа уже удалённого элемента
+    Regions oneDeletedElement = reg[positionDelete];
+
+    //Сам процесс удаления
+    deleteContentsByNumber(reg, size, positionDelete);
+
+    cout << "Элемент " << positionDelete + 1 << " удалён." << endl;
+
+    //Печать удалённого элемента
+    printTable(reg, size, vectorPositionDelete);
+    cout << "Количество записей: " << size << endl;
+
+    isSaved = false;
 }
 
-//==========2 - Печать всего массива==========
+//========== 2 - Печать всего массива ==========
 void printContents(Regions *reg, int size)
 {
     if (reg == nullptr)
@@ -646,90 +680,71 @@ void printContents(Regions *reg, int size)
     cout << "Количество записей: " << size << endl;
 }
 
-//==========Отсортирован ли уже массив==========
+//========== Отсортирован ли уже массив ==========
 bool isSorted(Regions *reg, int size, int field, bool ascending)
 {
     switch (field)
     {
         case 0: //код
             if (ascending)
-            {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].code > reg[i+1].code)
                         return false;
-            }
             else
-            {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].code < reg[i+1].code)
                         return false;
-            }
             break;
         case 1: //губернатор
             if (ascending)
-            {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].governor > reg[i+1].governor)
                         return false;
-            }
             else
-            {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].governor < reg[i+1].governor)
                         return false;
-            }
             break;
         case 2: //площадь
             if (ascending)
-            {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].area > reg[i+1].area)
                         return false;
-            }
             else
-            {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].area < reg[i+1].area)
                         return false;
-            }
             break;
         case 3: //население
             if (ascending)
-            {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].population > reg[i+1].population)
                         return false;
-            }
             else
-            {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].population < reg[i+1].population)
                         return false;
-            }
             break;
         case 4: //центр
             if (ascending)
-            {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].regionalCenter > reg[i+1].regionalCenter)
                         return false;
-            }
             else
-            {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].regionalCenter < reg[i+1].regionalCenter)
                         return false;
-            }
             break;
     }
     return true;
 }
 
-//==========Реализация сортировки вставками по заданному полю==========
+//========== Реализация сортировки вставками по заданному полю ==========
 void insertionSort(Regions *reg, int size, int field, bool ascending)
 {
     switch (field)
     {
+        //Код региона
         case 0:
             for (int i = 1; i < size; i++)
             {
@@ -742,6 +757,7 @@ void insertionSort(Regions *reg, int size, int field, bool ascending)
                 reg[j+1] = temp;
             }
             break;
+        //ФИО губернатора
         case 1:
             for (int i = 1; i < size; i++)
             {
@@ -754,6 +770,7 @@ void insertionSort(Regions *reg, int size, int field, bool ascending)
                 reg[j+1] = temp;
             }
             break;
+        //Площадь
         case 2:
             for (int i = 1; i < size; i++)
             {
@@ -766,6 +783,7 @@ void insertionSort(Regions *reg, int size, int field, bool ascending)
                 reg[j+1] = temp;
             }
             break;
+        //Население
         case 3:
             for (int i = 1; i < size; i++)
             {
@@ -778,6 +796,7 @@ void insertionSort(Regions *reg, int size, int field, bool ascending)
                 reg[j+1] = temp;
             }
             break;
+        //Областной центр
         case 4:
             for (int i = 1; i < size; i++)
             {
@@ -806,7 +825,7 @@ vector<int> findContents(Regions *reg, int size, int field, string key)
             break;
         case 1: //губернатор
             for (int i = 0; i < size; i++)
-                if (reg[i].governor == key)
+                if (reg[i].governor.find(key) != string::npos)
                     resultNumbers.push_back(i);
             break;
         case 2: //площадь
@@ -821,14 +840,14 @@ vector<int> findContents(Regions *reg, int size, int field, string key)
             break;
         case 4: //центр
             for (int i = 0; i < size; i++)
-                if (reg[i].regionalCenter == key)
+                if (reg[i].regionalCenter.find(key) != string::npos)
                     resultNumbers.push_back(i);
             break;
     }
     return resultNumbers;
 }
 
-//==========3 - поиск данных по точному соответствию==========
+//========== 3 - поиск данных по точному соответствию ==========
 void interfaceFindContentsToShow(Regions *reg, int size)
 {
     if (reg == nullptr)
@@ -838,13 +857,15 @@ void interfaceFindContentsToShow(Regions *reg, int size)
     }
 
     int fieldSearch; //Поле, по которому надо искать
-    string strFieldSearch;
+    string strFieldSearch; //Для прорверки на правильность ввода
     string searchKey; //Что ищет пользователь
-    vector<int> foundNumbers; //Найденные записи
+    //Массив позиций в массиве найденных элементов
+    vector<int> foundNumbers;
 
     cout << "По какому полю искать?" << endl;
     cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр: ";
     cin >> strFieldSearch;
+    //Проверка на то, что ввёденные данные - число
     try {
         fieldSearch = stoi(strFieldSearch);
     }
@@ -861,25 +882,22 @@ void interfaceFindContentsToShow(Regions *reg, int size)
 
     fieldSearch--; //Нумерация начинается с нуля
 
-    cout << "Ищем: ";
+    cout << "Введите ключ поиска: ";
     cin.ignore();
     getline(cin, searchKey);
 
     foundNumbers = findContents(reg, size, fieldSearch, searchKey);
 
-    if (foundNumbers.size() != 0)
-    {
-        cout << endl << "Результаты: " << endl << endl;
-
-        printTable(reg, size, foundNumbers);
-    }
-    else
+    if (foundNumbers.size() == 0)
     {
         cout << "Ничего не найдено." << endl;
+        return;
     }
+    cout << "Результаты поиска: " << endl;
+    printTable(reg, size, foundNumbers);
 }
 
-//==========4 - сортировка по заданному полю==========
+//========== 4 - сортировка по заданному полю ==========
 void sortContents(Regions *reg, int size, bool &isSaved)
 {
     if (reg == nullptr)
@@ -887,21 +905,30 @@ void sortContents(Regions *reg, int size, bool &isSaved)
         printNoData();
         return;
     }
-    int field;
+    int fieldSort; //Поле, по которому сортировать
+    string strFieldSort; //Для проверки на правильность ввода
     bool ascending; //Сортировка по возрастанию
     char answerAscending; //(y|n) Ввод пользователя
 
     cout << "По какому полю сортировать?" << endl;
     cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр: ";
-    cin >> field;
+    cin >> strFieldSort;
+    //Проверка на то, что считываемые данные - число
+    try {
+        fieldSort = stoi(strFieldSort);
+    }
+    catch(exception ex) {
+        printExpectedNumber();
+        return;
+    }
 
-    if (field < 1 || field > 5)
+    if (fieldSort < 1 || fieldSort > 5)
     {
         cout << "Поля с таким номером не существует." << endl;
         return;
     }
 
-    field--; //Нумерация начинается с нуля
+    fieldSort--; //Нумерация начинается с нуля
 
     cout << "По возрастанию? Иначе по убыванию (y/n) ";
     cin >> answerAscending;
@@ -916,41 +943,45 @@ void sortContents(Regions *reg, int size, bool &isSaved)
         return;
     }
 
-    if (isSorted(reg, size, field, ascending))
+    if (isSorted(reg, size, fieldSort, ascending))
     {
         cout << "Массив уже отсортирован по этому полю." << endl;
         return;
     }
 
-    insertionSort(reg, size, field, ascending);
+    //Сам процесс сортировки
+    insertionSort(reg, size, fieldSort, ascending);
 
     isSaved = false;
 
-    cout << endl << "Результат сортировки: " << endl << endl;
+    cout << "Результат сортировки: " << endl;
     printTable(reg, size);
 }
 
 
-//==========5 - сохранение в текстовый файл==========
+//========== 5 - сохранение в текстовый файл ==========
 void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, string &path)
 {
-    char confirmSave;
+    //Подтверждение сохранения пустого массива
+    char confirmSaveEmpty;
+    //Выбор сохранения
+    char answerSave;
  
     //Для неприкосновенности переменной path в случае ошибки
-    string enteredPath;
+    string savePath;
 
     //Удалось ли открыть файл для сохранения
-    bool success = false;
+    bool success;
 
     if (reg == nullptr)
     {
         printNoData();
         cout << "Всё равно сохранить? (y/n) ";
-        cin >> confirmSave;
+        cin >> confirmSaveEmpty;
 
-        if (confirmSave == 'n')
+        if (confirmSaveEmpty == 'n')
             return;
-        else if (confirmSave != 'y')
+        else if (confirmSaveEmpty != 'y')
         {
             printExpectedYN();
             return;
@@ -960,45 +991,46 @@ void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, stri
     //Если файл с таким именем был открыт/сохранён ранее
     if (isFromFile)
     {
-        cout << "Сохранить как \"" << path << "\"? ([y]es/save [a]s/[c]ancel) ";
-        cin >> confirmSave;
-        if (confirmSave == 'c')
+        cout << "Сохранить как \"" << path << "\" ([y]es/save [a]s/[c]ancel)? ";
+        cin >> answerSave;
+        if (answerSave == 'c')
             return;
-        else if (confirmSave != 'y' && confirmSave != 'a')
+        else if (answerSave != 'y' && answerSave != 'a')
         {
             cout << "Ожидался ввод \"y\", \"a\" или \"c\"." << endl;
             return;
         }
+        savePath = path;
     }
-    if (!isFromFile || confirmSave == 'a')
+    else if (answerSave == 'a')
     {
-        cout << "Введите путь к файлу: ";
+        cout << "Введите имя файла или полный путь к нему: ";
         cin.ignore();
-        getline(cin, enteredPath);
+        getline(cin, savePath);
     }
 
     //Сам процесс сохранения
-    success = (saveAs(reg, size, enteredPath) == 0 ? true : false);
+    success = (saveAs(reg, size, savePath) == 0 ? true : false);
 
-    if (success)
+    if (!success)
     {
-        isFromFile = true; //Потому что данные в памяти и в файле совпадают
-        isSaved = true;
-        path = enteredPath;
+        cout << "Не удалось сохранить файл по пути \"" << savePath << "\"." << endl;
+        return;
+    }
+    isFromFile = true; //Потому что данные в памяти и в файле совпадают
+    isSaved = true;
+    path = savePath;
 
-        cout << "Массив сохранён в файле \"" << enteredPath << "\"." << endl;
-    }
-    else
-    {
-        cout << "Не удалось сохранить файл по пути \"" << enteredPath << "\"." << endl;
-    }
+    cout << "Массив сохранён в файле \"" << savePath << "\"." << endl;
 }
 
+//========== Реализация процесса сохранения ==========
 int saveAs(Regions *reg, int size, string path)
 {
     ofstream fout;
     fout.open(path);
 
+    //Если не получилось открыть файл для записи
     if (!fout.is_open())
         return -1;
     
@@ -1015,17 +1047,6 @@ int saveAs(Regions *reg, int size, string path)
     return 0;
 }
 
-void handleFailingFileReadingException(Regions *&reg, int &size, int position, string &path, ifstream &fin)
-{
-    cout << "Ошибка чтения файла \"" << path << "\"." << endl;
-    cout << "Поле записи номер " << position + 1 << " должно быть числом." << endl;
-    fin.close();
-    delete [] reg;
-    reg = nullptr;
-    path = "";
-    size = 0;
-}
-
 //==========6 - чтение в память из файла==========
 void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, string &path)
 {
@@ -1034,6 +1055,10 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
     string currentLine; //Текущая строка файла
     int lines = 0; //Счётчик строк файла
 
+    //Для неприкосновенности переменной path в случае ошибки
+    string readPath;
+
+    //Подтвердить, что несохранённые даннные могут быть потеряны
     char confirmContinue;
 
     //Если в памяти есть несохранённые изменения
@@ -1041,21 +1066,20 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
     {
         AskContinue();
         cin >> confirmContinue;
-        if (confirmContinue != 'y')
+        if (confirmContinue == 'n')
+            return;
+        else if (confirmContinue != 'y')
         {
-            //Уходим отсюда
+            printExpectedYN();
             return;
         }
     }
 
-    //Для неприкосновенности переменной path в случае ошибки
-    string enteredPath;
-
-    cout << "Введите путь к файлу: ";
+    cout << "Введите имя файла или полный путь к нему: ";
     cin.ignore();
-    getline(cin, enteredPath);
+    getline(cin, readPath);
 
-    fin.open(enteredPath);
+    fin.open(readPath);
 
     //Если такого файла нет на диске
     if (!fin.is_open())
@@ -1064,21 +1088,16 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
         return;
     }
 
-    //Очищаем память
-    delete [] reg;
-    reg = nullptr;
-
     //Считать количество строк
     while (getline(fin, currentLine))
         lines++;
 
-    size = lines;
-
     fin.close();
-    fin.open(enteredPath); //Чтобы считывать файл с начала
+    fin.open(readPath); //Чтобы снова считывать файл с начала
 
-    //Выделить память под массив
-    reg = new Regions[size];
+    //Временный массив для неприкосновенности текущих данных
+    //в случае ошибки чтения
+    Regions *dangerReg = new Regions[lines];
 
     //Временные переменные
     string tempGovernor, strCode, strArea, strPopulation;
@@ -1087,48 +1106,65 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
     for (int i = 0; i < lines; i++)
     {
         fin >> strCode;
+        //Проверка на то, что считываемые данные - число
         try {
-            reg[i].code = stoi(strCode);
+            dangerReg[i].code = stoi(strCode);
         }
         catch (exception ex) {
-            handleFailingFileReadingException(reg, size, i, enteredPath, fin);
+            printBadFileData(readPath, i);
+            delete [] dangerReg;
+            fin.close();
             return;
         }
 
         fin >> tempGovernor;
-        reg[i].governor += tempGovernor + ' ';
+        dangerReg[i].governor += tempGovernor + ' ';
         fin >> tempGovernor;
-        reg[i].governor += tempGovernor + ' ';
+        dangerReg[i].governor += tempGovernor + ' ';
         fin >> tempGovernor;
-        reg[i].governor += tempGovernor;
+        dangerReg[i].governor += tempGovernor;
         fin >> strArea;
+
+        //Проверка на то, что считываемые данные - число
         try {
-            reg[i].area = stoi(strArea);
+            dangerReg[i].area = stoi(strArea);
         }
         catch (exception ex) {
-            handleFailingFileReadingException(reg, size, i, enteredPath, fin);
+            printBadFileData(readPath, i);
+            delete [] dangerReg;
+            fin.close();
             return;
         }
         fin >> strPopulation;
+
+        //Проверка на то, что считываемые данные - число
         try {
-            reg[i].population = stoi(strPopulation);
+            dangerReg[i].population = stoi(strPopulation);
         }
         catch (exception ex) {
-            handleFailingFileReadingException(reg, size, i, enteredPath, fin);
+            printBadFileData(readPath, i);
+            delete [] dangerReg;
+            fin.close();
             return;
         }
-        fin >> reg[i].regionalCenter;
+        fin >> dangerReg[i].regionalCenter;
     }
 
+    //Очищаем оригинальный массив
+    delete [] reg;
+    //Теперь он указывает уже на проверенные считанные данные
+    reg = dangerReg;
+
+    size = lines;
     isSaved = true;
     isFromFile = true;
-    path = enteredPath;
+    path = readPath;
 
     fin.close();
 
-    cout << "Чтение файла \"" << enteredPath << "\" успешно завершено." << endl;
+    cout << "Чтение файла \"" << readPath << "\" успешно завершено." << endl;
 
-    cout << endl << "Содержимое:" << endl << endl;
+    cout << "Содержимое:" << endl;
     printTable(reg, size);
     cout << "Количество записей: " << size << endl;
 }
