@@ -34,7 +34,7 @@ struct Regions
 };
 
 //Приглашение командной строки
-void printPrompt();
+void printPrompt(string path);
 //Помощь
 void printCommands();
 //Предупреждение о несохранённых данных
@@ -43,6 +43,8 @@ void AskContinue();
 void printNoData();
 //Если пользователь ввёл не y, и не n
 void printExpectedYN();
+//Если пользователь ввёл не число
+void printExpectedNumber();
 
 //Очистить массив в памяти
 void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved, string &path);
@@ -81,6 +83,9 @@ void saveAs(Regions *reg, int size, string path);
 //Интерфейс сохранения
 void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, string &path);
 
+//Обработка ошибочных данных читаемого файла
+void handleFailingFileReadingException(Regions *&reg, int &size, int position, string &path, ifstream &fin);
+
 //Интерфейс + реализация загрузки
 void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, string &path);
 
@@ -108,7 +113,7 @@ int main()
 
     while (true) 
     {
-        printPrompt();
+        printPrompt(filePath);
         cin >> command;
 
         switch (command)
@@ -190,9 +195,9 @@ EXIT:
 }
 
 //==========Приглашение ввести команду==========
-void printPrompt()
+void printPrompt(string path)
 {
-    cout << "> ";
+    cout << path << "> ";
 }
 
 //==========Помощь. Список доступных команд==========
@@ -217,6 +222,11 @@ void printCommands()
 void printNoData()
 {
     cout << "Массив данных пуст." << endl;
+}
+
+void printExpectedNumber()
+{
+    cout << "Ожидался ввод числа." << endl;
 }
 
 void printExpectedYN()
@@ -370,7 +380,7 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
         newReg.code = stoi(strCode);
     }
     catch(exception ex) {
-        cout << "Введено не число." << endl;
+        printExpectedNumber();
         return;
     }
 
@@ -388,7 +398,7 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
         newReg.area = stoi(strArea);
     }
     catch(exception ex) {
-        cout << "Введено не число." << endl;
+        printExpectedNumber();
         return;
     }
     cout << "Население: ";
@@ -397,7 +407,7 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
         newReg.population = stoi(strPopulation);
     }
     catch(exception ex) {
-        cout << "Введено не число." << endl;
+        printExpectedNumber();
         return;
     }
     cout << "Областной центр: ";
@@ -435,11 +445,37 @@ void editContents(Regions *reg, int size, bool &isSaved)
         return;
     }
 
-    int fieldEdit;
+    //Номер записи для редактирования
     int position;
+    string strPosition;
+
+    //Поле записи для редактирования
+    int fieldEdit;
+    string strFieldEdit;
+
+    //Временные переменные для неприкосновенности данных при ошибке
+    int code;
+    string governor;
+    int area, population;
+    string regionalCenter;
+
+    //Временные переменные для проверки на то,
+    //что введённые данные были числом
+    string strCode, strArea, strPopulation;
+
+    //Для временного хранения Ф, И, О по отдельности
+    string family, name, patronymic;
 
     cout << "Какую запись редактировать? ";
-    cin >> position;
+    cin >> strPosition;
+    try {
+        position = stoi(strPosition);
+    }
+    catch (exception ex) {
+        printExpectedNumber();
+        return;
+    }
+
     position--; //Нумерация начинается с нуля
 
     if (position < 0 || position >= size)
@@ -448,7 +484,7 @@ void editContents(Regions *reg, int size, bool &isSaved)
         return;
     }
 
-    //Для показа пользователю редактируемого элемента
+    //Для показа пользователю редактируемого элемента отдельно
     Regions *oneEditedElement = new Regions[1];
     oneEditedElement[0] = reg[position];
 
@@ -457,7 +493,15 @@ void editContents(Regions *reg, int size, bool &isSaved)
 
     cout << "Какое поле заменить?" << endl;
     cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр: ";
-    cin >> fieldEdit;
+    cin >> strFieldEdit;
+    try {
+        fieldEdit = stoi(strFieldEdit);
+    }
+    catch (exception ex) {
+        printExpectedNumber();
+        return;
+    }
+
     fieldEdit--; //Нумерация начинается с нуля
 
     if (fieldEdit < 0 || fieldEdit >= 5)
@@ -471,21 +515,52 @@ void editContents(Regions *reg, int size, bool &isSaved)
     switch (fieldEdit)
     {
         case 0:
-            cin >> reg[position].code;
+            cin >> strCode;
+            try {
+                code = stoi(strCode);
+            }
+            catch (exception ex) {
+                printExpectedNumber();
+                return;
+            }
+            reg[position].code = code; 
             break;
         case 1:
-            cin.ignore();
-            getline(cin, reg[position].governor);
+            cout << "Фамилия: ";
+            cin >> family;
+            cout << "Имя: ";
+            cin >> name;
+            cout << "Отчество: ";
+            cin >> patronymic;
+            governor = family + ' ' + name + ' ' + patronymic;
+            reg[position].governor = governor; 
             break;
         case 2:
-            cin >> reg[position].area;
+            cin >> strArea;
+            try {
+                area = stoi(strArea);
+            }
+            catch (exception ex) {
+                printExpectedNumber;
+                return;
+            }
+            reg[position].area = area; 
             break;
         case 3:
-            cin >> reg[position].population;
+            cin >> strPopulation;
+            try {
+                population = stoi(strPopulation);
+            }
+            catch (exception ex) {
+                printExpectedNumber;
+                return;
+            }
+            reg[position].population = population; 
             break;
         case 4:
             cin.ignore();
-            getline(cin, reg[position].regionalCenter);
+            getline(cin, regionalCenter);
+            reg[position].regionalCenter = regionalCenter; 
             break;
     }
 
@@ -762,12 +837,20 @@ void interfaceFindContentsToShow(Regions *reg, int size)
     }
 
     int fieldSearch; //Поле, по которому надо искать
+    string strFieldSearch;
     string searchKey; //Что ищет пользователь
     vector<int> foundNumbers; //Найденные записи
 
     cout << "По какому полю искать?" << endl;
     cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр: ";
-    cin >> fieldSearch;
+    cin >> strFieldSearch;
+    try {
+        fieldSearch = stoi(strFieldSearch);
+    }
+    catch (exception ex) {
+        printExpectedNumber();
+        return;
+    }
 
     if (fieldSearch < 1 || fieldSearch > 5)
     {
@@ -912,6 +995,17 @@ void saveAs(Regions *reg, int size, string path)
     fout.close();
 }
 
+void handleFailingFileReadingException(Regions *&reg, int &size, int position, string &path, ifstream &fin)
+{
+    cout << "Ошибка чтения файла \"" << path << "\"." << endl;
+    cout << "Поле записи номер " << position + 1 << " должно быть числом." << endl;
+    fin.close();
+    delete [] reg;
+    reg = nullptr;
+    path = "";
+    size = 0;
+}
+
 //==========6 - чтение в память из файла==========
 void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, string &path)
 {
@@ -976,13 +1070,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
             reg[i].code = stoi(strCode);
         }
         catch (exception ex) {
-            cout << "Ошибка чтения файла \"" << enteredPath << "\"." << endl;
-            cout << "Поле \"код региона\" записи номер " << i + 1 << " должно быть числом." << endl;
-            fin.close();
-            delete [] reg;
-            reg = nullptr;
-            path = "";
-            size = 0;
+            handleFailingFileReadingException(reg, size, i, enteredPath, fin);
             return;
         }
 
@@ -992,32 +1080,20 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
         reg[i].governor += tempGovernor + ' ';
         fin >> tempGovernor;
         reg[i].governor += tempGovernor;
-        fin >> strCode;
+        fin >> strArea;
         try {
-            reg[i].code = stoi(strCode);
+            reg[i].area = stoi(strArea);
         }
         catch (exception ex) {
-            cout << "Ошибка чтения файла \"" << enteredPath << "\"." << endl;
-            cout << "Поле \"площадь\" записи номер " << i + 1 << " должно быть числом." << endl;
-            fin.close();
-            delete [] reg;
-            reg = nullptr;
-            path = "";
-            size = 0;
+            handleFailingFileReadingException(reg, size, i, enteredPath, fin);
             return;
         }
-        fin >> strCode;
+        fin >> strPopulation;
         try {
-            reg[i].code = stoi(strCode);
+            reg[i].population = stoi(strPopulation);
         }
         catch (exception ex) {
-            cout << "Ошибка чтения файла \"" << enteredPath << "\"." << endl;
-            cout << "Поле \"население\" записи номер " << i + 1 << " должно быть числом." << endl;
-            fin.close();
-            delete [] reg;
-            reg = nullptr;
-            path = "";
-            size = 0;
+            handleFailingFileReadingException(reg, size, i, enteredPath, fin);
             return;
         }
         fin >> reg[i].regionalCenter;
@@ -1025,6 +1101,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
 
     isSaved = true;
     isFromFile = true;
+    path = enteredPath;
 
     fin.close();
 
