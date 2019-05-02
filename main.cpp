@@ -949,8 +949,6 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
         return;
     }
 
-    path = enteredPath;
-
     //Очищаем память
     delete [] reg;
     reg = nullptr;
@@ -962,25 +960,66 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
     size = lines;
 
     fin.close();
-    fin.open(path); //Чтобы считывать файл с начала
+    fin.open(enteredPath); //Чтобы считывать файл с начала
 
     //Выделить память под массив
     reg = new Regions[size];
 
-    string tempGovernor; //Для временного хранения Ф, И, О
+    //Временные переменные
+    string tempGovernor, strCode, strArea, strPopulation;
 
     //Парсить файл
     for (int i = 0; i < lines; i++)
     {
-        fin >> reg[i].code;
+        fin >> strCode;
+        try {
+            reg[i].code = stoi(strCode);
+        }
+        catch (exception ex) {
+            cout << "Ошибка чтения файла \"" << enteredPath << "\"." << endl;
+            cout << "Поле \"код региона\" записи номер " << i + 1 << " должно быть числом." << endl;
+            fin.close();
+            delete [] reg;
+            reg = nullptr;
+            path = "";
+            size = 0;
+            return;
+        }
+
         fin >> tempGovernor;
         reg[i].governor += tempGovernor + ' ';
         fin >> tempGovernor;
         reg[i].governor += tempGovernor + ' ';
         fin >> tempGovernor;
         reg[i].governor += tempGovernor;
-        fin >> reg[i].area;
-        fin >> reg[i].population;
+        fin >> strCode;
+        try {
+            reg[i].code = stoi(strCode);
+        }
+        catch (exception ex) {
+            cout << "Ошибка чтения файла \"" << enteredPath << "\"." << endl;
+            cout << "Поле \"площадь\" записи номер " << i + 1 << " должно быть числом." << endl;
+            fin.close();
+            delete [] reg;
+            reg = nullptr;
+            path = "";
+            size = 0;
+            return;
+        }
+        fin >> strCode;
+        try {
+            reg[i].code = stoi(strCode);
+        }
+        catch (exception ex) {
+            cout << "Ошибка чтения файла \"" << enteredPath << "\"." << endl;
+            cout << "Поле \"население\" записи номер " << i + 1 << " должно быть числом." << endl;
+            fin.close();
+            delete [] reg;
+            reg = nullptr;
+            path = "";
+            size = 0;
+            return;
+        }
         fin >> reg[i].regionalCenter;
     }
 
@@ -989,7 +1028,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
 
     fin.close();
 
-    cout << "Чтение файла \"" << path << "\" закончено." << endl;
+    cout << "Чтение файла \"" << enteredPath << "\" успешно завершено." << endl;
 
     cout << endl << "Содержимое:" << endl << endl;
     printTable(reg, size);
