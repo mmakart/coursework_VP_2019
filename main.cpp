@@ -1,12 +1,14 @@
-//Курсовая работа Макарцева Михаила Петровича
-//Группы ПИб-18И2
-//По предмету "Высокоуровневое программирование"
-//Преподаватель Зырянова Светлана Анатольевна
-//СибАДИ 2019
-
 /*
-Функции программы:
+  Курсовая работа Макарцева Михаила Петровича
+  Группы ПИб-18И2
+  По предмету "Высокоуровневое программирование"
+  Преподаватель Зырянова Светлана Анатольевна
+  СибАДИ 2019
+
+  Функции программы:
+- очистка массива в памяти
 - ввод нового элемента в массив
+- редактирование элемента
 - печать всего массива
 - поиск элемента в массиве
 - сортировка массива по заданному полю (вставками)
@@ -18,6 +20,7 @@
 #include <iomanip>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 
 #define DEBUG
 
@@ -47,9 +50,21 @@ void printExpectedNumber();
 void printExpectedYN();
 //Если записи с этим номером нет
 void printNoSuchElement();
+//Считываемый файл содержит данные в неправильном формате
+void printBadFileData(string path, int position);
 
 //Очистить массив в памяти
 void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved, string &path);
+
+//Служебные функции печати таблицы
+void printTableHead(int width);
+void printTableBottom(int width);
+//Реализация вывода массива в табличной форме
+void printTable(Regions *reg, int size);
+void printTable(Regions *reg, int size, vector<int> positions);
+void printTable(Regions reg);
+//Интерфейс печати массива
+void printContents(Regions *reg, int size);
 
 //Интерфейс + реализация добавления элемента
 void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile);
@@ -62,12 +77,10 @@ void deleteContentsByNumber(Regions *&reg, int &size, int position);
 //Интерфейс удаления элементов
 void interfaceDeleteContents(Regions *&reg, int &size, bool &isSaved);
 
-//Реализация вывода массива в табличной форме
-void printTable(Regions *reg, int size);
-void printTable(Regions *reg, int size, vector<int> positions);
-void printTable(Regions reg);
-//Интерфейс печати массива
-void printContents(Regions *reg, int size);
+//Реализация поиска
+vector<int> findContents(Regions *reg, int size, int field, string key);
+//Интерфейс поиска
+void interfaceFindContentsToShow(Regions *reg, int size);
 
 //Является ли массив уже отсортированным
 bool isSorted(Regions *reg, int size, int field, bool ascending);
@@ -75,11 +88,6 @@ bool isSorted(Regions *reg, int size, int field, bool ascending);
 void insertionSort(Regions *reg, int size, int field, bool ascending);
 //Интерфейс сортировки
 void sortContents(Regions *reg, int size, bool &isSaved);
-
-//Реализация поиска
-vector<int> findContents(Regions *reg, int size, int field, string key);
-//Интерфейс поиска
-void interfaceFindContentsToShow(Regions *reg, int size);
 
 //Реализация сохранения, возвращает код успеха/ошибки
 int saveAs(Regions *reg, int size, string path);
@@ -200,12 +208,17 @@ EXIT:
 //========== Приглашение ввести команду ==========
 void printPrompt(string path)
 {
-    cout << path << "> ";
+    if (path != "")
+        cout << "[" << path << "]" << "> ";
+    else
+        cout << "> ";
 }
 
 //========== Помощь. Список доступных команд ==========
 void printCommands()
 {
+    cout << "+-------------------------------------------------+" << endl;
+    cout << "| Список доступных команд                         |" << endl;
     cout << "+-------------------------------------------------+" << endl;
     cout << "| [c]reate - создать новый пустой массив          |" << endl;
     cout << "| [a]dd    - ввод нового элемента в массив        |" << endl;
@@ -237,21 +250,20 @@ void printExpectedNumber()
     cout << "Ошибка считывания числа: неверный формат." << endl;
 }
 
-void printNoSuchElement()
-{
-    cout << "Такого элемента нет." << endl;
-}
-
 void printExpectedYN()
 {
     cout << "Ожидался ввод \"y\" или \"n\"." << endl;
 }
 
+void printNoSuchElement()
+{
+    cout << "Такого элемента нет." << endl;
+}
 
 void printBadFileData(string path, int position)
 {
     cout << "Ошибка чтения файла \"" << path << "\"." << endl;
-    cout << "Одно из полей в строке " << position + 1 << " должно быть числом." << endl;
+    cout << "Одна из записей в строке " << position + 1 << " должно быть числом." << endl;
 }
 
 //========== Очистка текущего массива и создание нового ==========
@@ -288,30 +300,33 @@ void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved
     cout << "Массив данных очистился." << endl;
 }
 
+//Глобальные настройки для вывода таблицы
+const int colNumber = 5; //Количество столбцов
+static string tableHeaders[colNumber] = //Название полей
+{ "Regional code", "Governor", "Area, km^2", "Population", "Regional center" };
+static int colWidth[colNumber] = {16, 40, 13, 13, 22}; //Ширина каждого столбца
+//Ширина таблицы
+static int tableWidth = accumulate(colWidth, colWidth + colNumber, 0);
+
+void printTableHead(int width)
+{
+    //Вывод заголовков
+    cout << string(width, '=') << endl;
+    for (int i = 0; i < colNumber; i++)
+        cout << left << setw(colWidth[i]) << tableHeaders[i];
+    cout << endl;
+    cout << string(width, '-') << endl;
+}
+
+void printTableBottom(int width)
+{
+    cout << string(width, '-') << endl;
+}
+
 //========== Печать данных, поданных на вход, в виде таблицы ==========
 void printTable(Regions *reg, int size)
 {
-    const int colNumber = 5; //Количество столбцов
-    static int colWidth[colNumber] = {16, 31, 13, 13, 22}; //Ширина каждого столбца
-    static string tableHeaders[colNumber] =
-    {
-        "Regional code", "Governor", "Area, km^2", "Population", "Regional center"
-    };
-
-    //Подсчёт ширины таблицы
-    int tableWidth = 0;
-    for (int i = 0; i < colNumber; i++) {
-        tableWidth += colWidth[i];
-    }
-
-    //Вывод заголовков
-    cout << string(tableWidth, '=') << endl;
-    for (int i = 0; i < colNumber; i++) {
-        cout << left << setw(colWidth[i]) << tableHeaders[i];
-    }
-    cout << endl;
-    cout << string(tableWidth, '-') << endl;
-
+    printTableHead(tableWidth);
     //Вывод содержимого таблицы
     for (int i = 0; i < size; i++)
     {
@@ -322,32 +337,13 @@ void printTable(Regions *reg, int size)
         cout << left << setw(colWidth[4]) << reg[i].regionalCenter;
         cout << endl;
     }
-    cout << string(tableWidth, '-') << endl;
+    printTableBottom(tableWidth);
 }
 
 //========== Печатать только те данные, номера которых указаны в positions ==========
 void printTable(Regions *reg, int size, vector<int> positions)
 {
-    const int colNumber = 5;
-    static int colWidth[colNumber] = {16, 31, 13, 13, 22}; //Ширина каждого столбца
-    static string tableHeaders[colNumber] =
-    {
-        "Regional code", "Governor", "Area, km^2", "Population", "Regional center"
-    };
-
-    int tableWidth = 0;
-    for (int i = 0; i < colNumber; i++) {
-        tableWidth += colWidth[i];
-    }
-
-    //Вывод заголовков
-    cout << string(tableWidth, '=') << endl;
-    for (int i = 0; i < colNumber; i++) {
-        cout << left << setw(colWidth[i]) << tableHeaders[i];
-    }
-    cout << endl;
-    cout << string(tableWidth, '-') << endl;
-
+    printTableHead(tableWidth);
     //Вывод содержимого таблицы
     for (int i = 0; i < positions.size(); i++)
     {
@@ -358,32 +354,13 @@ void printTable(Regions *reg, int size, vector<int> positions)
         cout << left << setw(colWidth[4]) << reg[positions[i]].regionalCenter;
         cout << endl;
     }
-    cout << string(tableWidth, '-') << endl;
+    printTableBottom(tableWidth);
 }
 
 //Печать в виде таблицы единственного элемента
 void printTable(Regions reg)
 {
-    const int colNumber = 5;
-    static int colWidth[colNumber] = {16, 31, 13, 13, 22}; //Ширина каждого столбца
-    static string tableHeaders[colNumber] =
-    {
-        "Regional code", "Governor", "Area, km^2", "Population", "Regional center"
-    };
-
-    int tableWidth = 0;
-    for (int i = 0; i < colNumber; i++) {
-        tableWidth += colWidth[i];
-    }
-
-    //Вывод заголовков
-    cout << string(tableWidth, '=') << endl;
-    for (int i = 0; i < colNumber; i++) {
-        cout << left << setw(colWidth[i]) << tableHeaders[i];
-    }
-    cout << endl;
-    cout << string(tableWidth, '-') << endl;
-
+    printTableHead(tableWidth);
     //Вывод содержимого таблицы
     cout << setw(colWidth[0]) << reg.code;
     cout << setw(colWidth[1]) << reg.governor;
@@ -392,7 +369,19 @@ void printTable(Regions reg)
     cout << left << setw(colWidth[4]) << reg.regionalCenter;
     cout << endl;
 
-    cout << string(tableWidth, '-') << endl;
+    printTableBottom(tableWidth);
+}
+
+//========== 2 - Печать всего массива ==========
+void printContents(Regions *reg, int size)
+{
+    if (reg == nullptr)
+    {
+        printNoData();
+        return;
+    }
+    printTable(reg, size);
+    cout << "Количество записей: " << size << endl;
 }
 
 //========== 1 - добавление нового элемента с консоли ==========
@@ -407,9 +396,7 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
         cin >> answerCreateFirst;
 
         if (answerCreateFirst == 'n')
-        {
             return;
-        }
         else if (answerCreateFirst != 'y')
         {
             printExpectedYN();
@@ -681,8 +668,6 @@ void interfaceDeleteContents(Regions *&reg, int &size, bool &isSaved)
     cout << "Введите позицию от 1 до " << size << " (0 для выхода)." << endl;
 
     int positionDelete; //Номер элемента для удаления
-    vector<int> vectorPositionDelete;
-    vectorPositionDelete.push_back(positionDelete);
 
     cout << "Позиция: ";
     cin >> positionDelete;
@@ -709,17 +694,6 @@ void interfaceDeleteContents(Regions *&reg, int &size, bool &isSaved)
     isSaved = false;
 }
 
-//========== 2 - Печать всего массива ==========
-void printContents(Regions *reg, int size)
-{
-    if (reg == nullptr)
-    {
-        printNoData();
-        return;
-    }
-    printTable(reg, size);
-    cout << "Количество записей: " << size << endl;
-}
 
 //========== Отсортирован ли уже массив ==========
 bool isSorted(Regions *reg, int size, int field, bool ascending)
@@ -727,50 +701,55 @@ bool isSorted(Regions *reg, int size, int field, bool ascending)
     switch (field)
     {
         case 0: //код
-            if (ascending)
+            if (ascending) {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].code > reg[i+1].code)
                         return false;
+            }
             else
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].code < reg[i+1].code)
                         return false;
             break;
         case 1: //губернатор
-            if (ascending)
+            if (ascending) {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].governor > reg[i+1].governor)
                         return false;
+            }
             else
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].governor < reg[i+1].governor)
                         return false;
             break;
         case 2: //площадь
-            if (ascending)
+            if (ascending) {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].area > reg[i+1].area)
                         return false;
+            }
             else
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].area < reg[i+1].area)
                         return false;
             break;
         case 3: //население
-            if (ascending)
+            if (ascending) {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].population > reg[i+1].population)
                         return false;
+            }
             else
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].population < reg[i+1].population)
                         return false;
             break;
         case 4: //центр
-            if (ascending)
+            if (ascending) {
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].regionalCenter > reg[i+1].regionalCenter)
                         return false;
+            }
             else
                 for (int i = 0; i < size - 1; i++)
                     if (reg[i].regionalCenter < reg[i+1].regionalCenter)
@@ -999,6 +978,28 @@ void sortContents(Regions *reg, int size, bool &isSaved)
     printTable(reg, size);
 }
 
+//========== Реализация процесса сохранения ==========
+int saveAs(Regions *reg, int size, string path)
+{
+    ofstream fout;
+    fout.open(path);
+
+    //Если не получилось открыть файл для записи
+    if (!fout.is_open())
+        return -1;
+    
+    for (int i = 0; i < size; i++)
+    {
+        fout << reg[i].code << ' ';
+        fout << reg[i].governor << ' ';
+        fout << reg[i].area << ' ';
+        fout << reg[i].population << ' ';
+        fout << reg[i].regionalCenter << endl;
+    }
+    fout.close();
+
+    return 0;
+}
 
 //========== 5 - сохранение в текстовый файл ==========
 void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, string &path)
@@ -1028,26 +1029,31 @@ void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, stri
             return;
         }
     }
+    //По умолчанию спрашивать имя сохраняемого файла
+    answerSave = 'a';
     
     //Если файл с таким именем был открыт/сохранён ранее
     if (isFromFile)
     {
         cout << "Сохранить как \"" << path << "\" ([y]es/save [a]s/[c]ancel)? ";
         cin >> answerSave;
-        if (answerSave == 'c')
+    }
+    switch (answerSave)
+    {
+        case 'c':
             return;
-        else if (answerSave != 'y' && answerSave != 'a')
-        {
+        case 'y':
+            //Путь сохранения останется тот же
+            savePath = path;
+            break;
+        case 'a':
+            cout << "Введите имя файла или полный путь к нему: ";
+            cin.ignore();
+            getline(cin, savePath);
+            break;
+        default:
             cout << "Ожидался ввод \"y\", \"a\" или \"c\"." << endl;
             return;
-        }
-        savePath = path;
-    }
-    else if (answerSave == 'a')
-    {
-        cout << "Введите имя файла или полный путь к нему: ";
-        cin.ignore();
-        getline(cin, savePath);
     }
 
     //Сам процесс сохранения
@@ -1065,30 +1071,7 @@ void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, stri
     cout << "Массив сохранён в файле \"" << savePath << "\"." << endl;
 }
 
-//========== Реализация процесса сохранения ==========
-int saveAs(Regions *reg, int size, string path)
-{
-    ofstream fout;
-    fout.open(path);
-
-    //Если не получилось открыть файл для записи
-    if (!fout.is_open())
-        return -1;
-    
-    for (int i = 0; i < size; i++)
-    {
-        fout << reg[i].code << ' ';
-        fout << reg[i].governor << ' ';
-        fout << reg[i].area << ' ';
-        fout << reg[i].population << ' ';
-        fout << reg[i].regionalCenter << endl;
-    }
-    fout.close();
-
-    return 0;
-}
-
-//==========6 - чтение в память из файла==========
+//========== 6 - чтение в память из файла ==========
 void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, string &path)
 {
     ifstream fin;
@@ -1099,7 +1082,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
     //Для неприкосновенности переменной path в случае ошибки
     string readPath;
 
-    //Подтвердить, что несохранённые даннные могут быть потеряны
+    //Подтверждение, что несохранённые даннные будут потеряны
     char confirmContinue;
 
     //Если в памяти есть несохранённые изменения
