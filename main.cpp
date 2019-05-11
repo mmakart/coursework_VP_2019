@@ -6,14 +6,14 @@
   СибАДИ 2019
 
   Функции программы:
-- очистка массива в памяти
-- ввод нового элемента в массив
-- редактирование элемента
-- печать всего массива
-- поиск элемента в массиве
-- сортировка массива по заданному полю (вставками)
-- сохранение массива в файле
-- чтение массива из файла
+    - очистка массива в памяти
+    - ввод нового элемента в массив
+    - редактирование элемента
+    - печать всего массива
+    - поиск элемента в массиве
+    - сортировка массива по заданному полю (вставками)
+    - сохранение массива в файле
+    - чтение массива из файла
 */
 
 #include <iostream>
@@ -51,7 +51,7 @@ void printExpectedYN();
 //Если записи с этим номером нет
 void printNoSuchElement();
 //Считываемый файл содержит данные в неправильном формате
-void printBadFileData(string path, int position);
+void printBadFileData(string path, int line);
 
 //Очистить массив в памяти
 void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved, string &path);
@@ -61,7 +61,7 @@ void printTableHead(int width);
 void printTableBottom(int width);
 //Реализация вывода массива в табличной форме
 void printTable(Regions *reg, int size);
-void printTable(Regions *reg, int size, vector<int> positions);
+void printTable(Regions *reg, int size, const vector<int> &positions);
 void printTable(Regions reg);
 //Интерфейс печати массива
 void printContents(Regions *reg, int size);
@@ -73,7 +73,7 @@ void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile);
 void editContents(Regions *reg, int size, bool &isSaved);
 
 //Релизация удаления элемента по его номеру
-void deleteContentsByNumber(Regions *&reg, int &size, int position);
+void deleteContentsByPosition(Regions *&reg, int &size, int position);
 //Интерфейс удаления элементов
 void interfaceDeleteContents(Regions *&reg, int &size, bool &isSaved);
 
@@ -104,7 +104,7 @@ int main()
     Regions *regions = nullptr; //База данных в оперативной памяти
     int size = 0; //Количество записей
     bool changesAreSaved = true; //Сохранены ли изменения
-    bool arrayIsFromFile = false; //Для сохранения в файл с тем же именем
+    bool arrayIsFromFile = false; //Для сохранения уже открытого файла с тем же именем
     string filePath; //По какому пути открыт файл, чтобы сохранять с тем же именем
 
     char confirmExit; //(y|n) Выйти без сохранения
@@ -180,8 +180,8 @@ int main()
                     goto EXIT;
                 else
                     break;
-            //Отладочные данные
 #ifdef DEBUG
+            //Отладочные данные
             case '0':
                 cout << "nullptr=" << (regions == nullptr);
                 cout << " size=" << size;
@@ -260,10 +260,10 @@ void printNoSuchElement()
     cout << "Такого элемента нет." << endl;
 }
 
-void printBadFileData(string path, int position)
+void printBadFileData(string path, int line)
 {
     cout << "Ошибка чтения файла \"" << path << "\"." << endl;
-    cout << "Одна из записей в строке " << position + 1 << " должно быть числом." << endl;
+    cout << "Одна из записей в строке " << line + 1 << " должно быть числом." << endl;
 }
 
 //========== Очистка текущего массива и создание нового ==========
@@ -308,9 +308,9 @@ static int colWidth[colNumber] = {16, 40, 13, 13, 22}; //Ширина каждо
 //Ширина таблицы
 static int tableWidth = accumulate(colWidth, colWidth + colNumber, 0);
 
+//Вывод заголовка
 void printTableHead(int width)
 {
-    //Вывод заголовков
     cout << string(width, '=') << endl;
     for (int i = 0; i < colNumber; i++)
         cout << left << setw(colWidth[i]) << tableHeaders[i];
@@ -318,6 +318,7 @@ void printTableHead(int width)
     cout << string(width, '-') << endl;
 }
 
+//Вывод нижней границы
 void printTableBottom(int width)
 {
     cout << string(width, '-') << endl;
@@ -327,7 +328,6 @@ void printTableBottom(int width)
 void printTable(Regions *reg, int size)
 {
     printTableHead(tableWidth);
-    //Вывод содержимого таблицы
     for (int i = 0; i < size; i++)
     {
         cout << setw(colWidth[0]) << reg[i].code;
@@ -341,10 +341,9 @@ void printTable(Regions *reg, int size)
 }
 
 //========== Печатать только те данные, номера которых указаны в positions ==========
-void printTable(Regions *reg, int size, vector<int> positions)
+void printTable(Regions *reg, int size, const vector<int> &positions)
 {
     printTableHead(tableWidth);
-    //Вывод содержимого таблицы
     for (int i = 0; i < positions.size(); i++)
     {
         cout << setw(colWidth[0]) << reg[positions[i]].code;
@@ -357,11 +356,10 @@ void printTable(Regions *reg, int size, vector<int> positions)
     printTableBottom(tableWidth);
 }
 
-//Печать в виде таблицы единственного элемента
+//========== Печать в виде таблицы единственного элемента ==========
 void printTable(Regions reg)
 {
     printTableHead(tableWidth);
-    //Вывод содержимого таблицы
     cout << setw(colWidth[0]) << reg.code;
     cout << setw(colWidth[1]) << reg.governor;
     cout << right << setw(colWidth[2] - 3) << reg.area << "   ";
@@ -519,6 +517,7 @@ void editContents(Regions *reg, int size, bool &isSaved)
     cout << "Введите позицию от 1 до " << size << " (0 для выхода)." << endl;
     cout << "Позиция: ";
     cin >> strPositionEdit;
+
     //Проверка на то, что введённые данные - число
     try {
         positionEdit = stoi(strPositionEdit);
@@ -528,13 +527,16 @@ void editContents(Regions *reg, int size, bool &isSaved)
         return;
     }
 
-    positionEdit--; //Нумерация начинается с нуля
-
-    if (positionEdit < 0 || positionEdit >= size)
+    //0 - код выхода
+    if (positionEdit == 0)
+        return;
+    else if (positionEdit < 0 || positionEdit > size)
     {
         printNoSuchElement();
         return;
     }
+
+    positionEdit--; //Нумерация начинается с нуля
 
     //Для показа пользователю редактируемого элемента отдельно
     Regions oneEditedElement = reg[positionEdit];
@@ -634,7 +636,7 @@ void editContents(Regions *reg, int size, bool &isSaved)
 }
 
 //========== Релизация процесса удаления элемента ==========
-void deleteContentsByNumber(Regions *&reg, int &size, int position)
+void deleteContentsByPosition(Regions *&reg, int &size, int position)
 {
     Regions *lessReg = new Regions[size - 1]; 
     
@@ -667,33 +669,58 @@ void interfaceDeleteContents(Regions *&reg, int &size, bool &isSaved)
 
     cout << "Введите позицию от 1 до " << size << " (0 для выхода)." << endl;
 
-    int positionDelete; //Номер элемента для удаления
+    int deletePosition; //Номер элемента для удаления
+    string strPositionDelete;
+    char confirmContinue; //(y|n) Продолжить
 
     cout << "Позиция: ";
-    cin >> positionDelete;
-    positionDelete--; //Нумерация начинается с нуля
+    cin >> strPositionDelete;
+    //Проверка на то, что введённые данные - число
+    try {
+        deletePosition = stoi(strPositionDelete);
+    }
+    catch (exception ex) {
+        printExpectedNumber();
+        return;
+    }
 
-    if (positionDelete < 0 || positionDelete >= size)
+    //0 - код выхода
+    if (deletePosition == 0)
+        return;
+    else if (deletePosition < 0 || deletePosition > size)
     {
         printNoSuchElement();
         return;
     }
 
-    //Для показа уже удалённого элемента
-    Regions oneDeletedElement = reg[positionDelete];
+    deletePosition--; //Нумерация начинается с нуля
+
+    //Для показа элемента для удаления
+    Regions oneDeletedElement = reg[deletePosition];
+
+    cout << "Удалить элемент? (y/n)" << endl;
+    //Печать кандидата на удаление
+    printTable(oneDeletedElement);
+
+    //Подтверждение удаление элемента
+    cin >> confirmContinue;
+    if (confirmContinue == 'n')
+        return;
+    else if (confirmContinue != 'y')
+    {
+        printExpectedYN();
+        return;
+    }
 
     //Сам процесс удаления
-    deleteContentsByNumber(reg, size, positionDelete);
+    deleteContentsByPosition(reg, size, deletePosition);
 
-    cout << "Элемент " << positionDelete + 1 << " удалён." << endl;
+    cout << "Элемент " << deletePosition + 1 << " удалён." << endl;
 
-    //Печать удалённого элемента
-    printTable(oneDeletedElement);
     cout << "Количество записей: " << size << endl;
 
     isSaved = false;
 }
-
 
 //========== Отсортирован ли уже массив ==========
 bool isSorted(Regions *reg, int size, int field, bool ascending)
@@ -833,6 +860,8 @@ void insertionSort(Regions *reg, int size, int field, bool ascending)
 }
 
 //Возвращает номера записей, соответствующих ключу
+//Целочиселнные данные ищем по точному совпадению,
+//строковые - по вхождению подстроки
 vector<int> findContents(Regions *reg, int size, int field, string key)
 {
     vector<int> resultNumbers;
@@ -867,7 +896,7 @@ vector<int> findContents(Regions *reg, int size, int field, string key)
     return resultNumbers;
 }
 
-//========== 3 - поиск данных по точному соответствию ==========
+//========== 3 - поиск записей ==========
 void interfaceFindContentsToShow(Regions *reg, int size)
 {
     if (reg == nullptr)
@@ -878,8 +907,8 @@ void interfaceFindContentsToShow(Regions *reg, int size)
 
     int fieldSearch; //Поле, по которому надо искать
     string strFieldSearch; //Для прорверки на правильность ввода
-    string searchKey; //Что ищет пользователь
-    //Массив позиций в массиве найденных элементов
+    string searchKey; //Ключ поиска
+    //Массив номеров найденных элементов
     vector<int> foundNumbers;
 
     cout << "По какому полю искать?" << endl;
@@ -1043,7 +1072,7 @@ void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, stri
         case 'c':
             return;
         case 'y':
-            //Путь сохранения останется тот же
+            //Путь сохранения берётся от текущего файла
             savePath = path;
             break;
         case 'a':
@@ -1173,6 +1202,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
         }
         fin >> dangerReg[i].regionalCenter;
     }
+    fin.close();
 
     //Очищаем оригинальный массив
     delete [] reg;
@@ -1184,10 +1214,7 @@ void loadFromFile(Regions *&reg, int &size, bool &isSaved, bool &isFromFile, str
     isFromFile = true;
     path = readPath;
 
-    fin.close();
-
     cout << "Чтение файла \"" << readPath << "\" успешно завершено." << endl;
-
     cout << "Содержимое:" << endl;
     printTable(reg, size);
     cout << "Количество записей: " << size << endl;
