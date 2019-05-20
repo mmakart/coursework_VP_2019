@@ -314,8 +314,8 @@ void createNewContents(Regions *&reg, int &size, bool &isFromFile, bool &isSaved
 //Глобальные настройки для вывода таблицы
 const int colNumber = 5; //Количество столбцов
 static string tableHeaders[colNumber] = //Название полей
-{ "Regional code", "Governor", "Area, km^2", "Population", "Regional center" };
-static int colWidth[colNumber] = {16, 40, 13, 13, 22}; //Ширина каждого столбца
+{ "Code", "Governor", "Area, km^2", "Population", "Regional center" };
+static int colWidth[colNumber] = {8, 40, 13, 13, 22}; //Ширина каждого столбца
 //Ширина таблицы
 static int tableWidth = accumulate(colWidth, colWidth + colNumber, 0);
 
@@ -396,23 +396,6 @@ void printContents(Regions *reg, int size)
 //========== 1 - добавление нового элемента с консоли ==========
 void addElement(Regions *&reg, int &size, bool &isSaved, bool isFromFile)
 {
-    if (reg == nullptr && !isFromFile)
-    {
-        char answerCreateFirst; //(y|n) Ответ, добавлять ли первую запись
-
-        printNoData();
-        cout << "Хотите создать первую запись? (y/n) ";
-        cin >> answerCreateFirst;
-
-        if (answerCreateFirst == 'n')
-            return;
-        else if (answerCreateFirst != 'y')
-        {
-            printExpectedYN();
-            return;
-        }
-    }
-
     //Новый массив данных с размером на единицу большим
     Regions *moreReg = new Regions[size + 1];
     //Добавляемый элемент
