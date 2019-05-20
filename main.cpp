@@ -107,7 +107,7 @@ int main()
     bool arrayIsFromFile = false; //Для сохранения уже открытого файла с тем же именем
     string filePath; //По какому пути открыт файл, чтобы сохранять с тем же именем
 
-    char confirmExit; //(y|n) Выйти без сохранения
+    char confirmExit; //(y|n|c) Сохранить перед выходом
 
     cout << "+------------------------------------------------+" << endl;
     cout << "| Программа, позволяющая работать с базой данных |" << endl;
@@ -173,13 +173,23 @@ int main()
                 if (changesAreSaved)
                     goto EXIT;
 
-                AskContinue();
+                cout << "Есть несохранённые изменения. Сохранить? (y/n/[c]cancel) ";
                 cin >> confirmExit;
 
-                if (confirmExit == 'y')
-                    goto EXIT;
-                else
-                    break;
+                switch (confirmExit)
+                {
+                    case 'n':
+                        goto EXIT;
+                    case 'c':
+                        break;
+                    case 'y':
+                        interfaceSave(regions, size, changesAreSaved, arrayIsFromFile, filePath);
+                        goto EXIT;
+                    default:
+                        cout << "Такой команды нет." << endl;
+                        break;
+                }
+                break;
 #ifdef DEBUG
             //Отладочные данные
             case '0':
@@ -497,9 +507,9 @@ void editContents(Regions *reg, int size, bool &isSaved)
     string strPositionEdit;
 
     //Поле записи для редактирования
-    int fieldEdit;
+    int editField;
     //Для проверки на правильность ввода числа
-    string strFieldEdit;
+    string strEditField;
 
     //Временные переменные для неприкосновенности основного массива при ошибке
     int code;
@@ -546,19 +556,19 @@ void editContents(Regions *reg, int size, bool &isSaved)
 
     cout << "Какое поле заменить?" << endl;
     cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр: ";
-    cin >> strFieldEdit;
+    cin >> strEditField;
     //Проверка на то, что введённые данные - число
     try {
-        fieldEdit = stoi(strFieldEdit);
+        editField = stoi(strEditField);
     }
     catch (exception ex) {
         printExpectedNumber();
         return;
     }
 
-    fieldEdit--; //Нумерация начинается с нуля
+    editField--; //Нумерация начинается с нуля
 
-    if (fieldEdit < 0 || fieldEdit >= 5)
+    if (editField < 0 || editField >= 5)
     {
         cout << "Такого поля нет." << endl;
         return;
@@ -566,7 +576,7 @@ void editContents(Regions *reg, int size, bool &isSaved)
 
     cout << "Введите новое значение: ";
 
-    switch (fieldEdit)
+    switch (editField)
     {
         //Код региона
         case 0:
@@ -905,37 +915,37 @@ void interfaceFindContentsToShow(Regions *reg, int size)
         return;
     }
 
-    int fieldSearch; //Поле, по которому надо искать
-    string strFieldSearch; //Для прорверки на правильность ввода
+    int searchField; //Поле, по которому надо искать
+    string strSearchField; //Для прорверки на правильность ввода
     string searchKey; //Ключ поиска
     //Массив номеров найденных элементов
     vector<int> foundNumbers;
 
     cout << "По какому полю искать?" << endl;
     cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр: ";
-    cin >> strFieldSearch;
+    cin >> strSearchField;
     //Проверка на то, что ввёденные данные - число
     try {
-        fieldSearch = stoi(strFieldSearch);
+        searchField = stoi(strSearchField);
     }
     catch (exception ex) {
         printExpectedNumber();
         return;
     }
 
-    if (fieldSearch < 1 || fieldSearch > 5)
+    if (searchField < 1 || searchField > 5)
     {
         cout << "Поля с таким номером не существует." << endl;
         return;
     }
 
-    fieldSearch--; //Нумерация начинается с нуля
+    searchField--; //Нумерация начинается с нуля
 
     cout << "Введите ключ поиска: ";
     cin.ignore();
     getline(cin, searchKey);
 
-    foundNumbers = findContents(reg, size, fieldSearch, searchKey);
+    foundNumbers = findContents(reg, size, searchField, searchKey);
 
     if (foundNumbers.size() == 0)
     {
@@ -954,30 +964,30 @@ void sortContents(Regions *reg, int size, bool &isSaved)
         printNoData();
         return;
     }
-    int fieldSort; //Поле, по которому сортировать
-    string strFieldSort; //Для проверки на правильность ввода
+    int sortField; //Поле, по которому сортировать
+    string strSortField; //Для проверки на правильность ввода
     bool ascending; //Сортировка по возрастанию
     char answerAscending; //(y|n) Ввод пользователя
 
     cout << "По какому полю сортировать?" << endl;
     cout << "1-код, 2-губернатор, 3-площадь, 4-население, 5-центр: ";
-    cin >> strFieldSort;
+    cin >> strSortField;
     //Проверка на то, что считываемые данные - число
     try {
-        fieldSort = stoi(strFieldSort);
+        sortField = stoi(strSortField);
     }
     catch(exception ex) {
         printExpectedNumber();
         return;
     }
 
-    if (fieldSort < 1 || fieldSort > 5)
+    if (sortField < 1 || sortField > 5)
     {
         cout << "Поля с таким номером не существует." << endl;
         return;
     }
 
-    fieldSort--; //Нумерация начинается с нуля
+    sortField--; //Нумерация начинается с нуля
 
     cout << "По возрастанию? Иначе по убыванию (y/n) ";
     cin >> answerAscending;
@@ -992,14 +1002,14 @@ void sortContents(Regions *reg, int size, bool &isSaved)
         return;
     }
 
-    if (isSorted(reg, size, fieldSort, ascending))
+    if (isSorted(reg, size, sortField, ascending))
     {
         cout << "Массив уже отсортирован по этому полю." << endl;
         return;
     }
 
     //Сам процесс сортировки
-    insertionSort(reg, size, fieldSort, ascending);
+    insertionSort(reg, size, sortField, ascending);
 
     isSaved = false;
 
@@ -1035,8 +1045,8 @@ void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, stri
 {
     //Подтверждение сохранения пустого массива
     char confirmSaveEmpty;
-    //Выбор сохранения
-    char answerSave;
+    //Выбор вида сохранения
+    char saveCase;
  
     //Для неприкосновенности переменной path в случае ошибки
     string savePath;
@@ -1059,15 +1069,15 @@ void interfaceSave(Regions *reg, int size, bool &isSaved, bool &isFromFile, stri
         }
     }
     //По умолчанию спрашивать имя сохраняемого файла
-    answerSave = 'a';
+    saveCase = 'a';
     
     //Если файл с таким именем был открыт/сохранён ранее
     if (isFromFile)
     {
         cout << "Сохранить как \"" << path << "\" ([y]es/save [a]s/[c]ancel)? ";
-        cin >> answerSave;
+        cin >> saveCase;
     }
-    switch (answerSave)
+    switch (saveCase)
     {
         case 'c':
             return;
