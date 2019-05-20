@@ -21,6 +21,7 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <numeric>
 
 #define DEBUG
 
@@ -874,36 +875,36 @@ void insertionSort(Regions *reg, int size, int field, bool ascending)
 //строковые - по вхождению подстроки
 vector<int> findContents(Regions *reg, int size, int field, string key)
 {
-    vector<int> resultNumbers;
+    vector<int> result;
     switch (field)
     {
         case 0: //код
             for (int i = 0; i < size; i++)
                 if (reg[i].code == stoi(key))
-                    resultNumbers.push_back(i);
+                    result.push_back(i);
             break;
         case 1: //губернатор
             for (int i = 0; i < size; i++)
                 if (reg[i].governor.find(key) != string::npos)
-                    resultNumbers.push_back(i);
+                    result.push_back(i);
             break;
         case 2: //площадь
             for (int i = 0; i < size; i++)
                 if (reg[i].area == stoi(key))
-                    resultNumbers.push_back(i);
+                    result.push_back(i);
             break;
         case 3: //население
             for (int i = 0; i < size; i++)
                 if (reg[i].population == stoi(key))
-                    resultNumbers.push_back(i);
+                    result.push_back(i);
             break;
         case 4: //центр
             for (int i = 0; i < size; i++)
                 if (reg[i].regionalCenter.find(key) != string::npos)
-                    resultNumbers.push_back(i);
+                    result.push_back(i);
             break;
     }
-    return resultNumbers;
+    return result;
 }
 
 //========== 3 - поиск записей ==========
