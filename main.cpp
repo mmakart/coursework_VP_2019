@@ -895,8 +895,9 @@ void interfaceFindContentsToShow(Regions *reg, int size)
 	}
 
 	int searchField; //Поле, по которому надо искать
-	string strSearchField; //Для прорверки на правильность ввода
+	string strSearchField; //Для проверки на правильность ввода
 	string searchKey; //Ключ поиска
+	string strSearchKey; //Для проверки на правильность ввода
 	//Массив номеров найденных элементов
 	vector<int> foundNumbers;
 
@@ -922,9 +923,21 @@ void interfaceFindContentsToShow(Regions *reg, int size)
 
 	cout << "Введите ключ поиска: ";
 	cin.ignore();
-	getline(cin, searchKey);
+	getline(cin, strSearchKey);
 
-	foundNumbers = findContents(reg, size, searchField, searchKey);
+	//Проверка на то, что введённые данные - число
+	if (searchField == 0 || searchField == 2 || searchField == 3)
+	{
+		try {
+			searchKey = stoi(strSearchKey);
+		}
+		catch(exception ex) {
+			printExpectedNumber();
+			return;
+		}
+	}
+
+	foundNumbers = findContents(reg, size, searchField, strSearchKey);
 
 	if (foundNumbers.size() == 0)
 	{
